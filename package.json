@@ -1,0 +1,27 @@
+{
+	"name": "expense-tracker-api",
+	"version": "0.1.0",
+	"private": true,
+	"type": "commonjs",
+	"scripts": {
+		"dev": "tsx watch src/server.ts",
+		"build": "tsc -p tsconfig.json",
+		"kill-port": "node -e \"require('dotenv').config(); const { execSync } = require('node:child_process'); const port = process.env.PORT || '8080'; try { const out = execSync('lsof -ti tcp:' + port, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); if (!out) { console.log('No process found on port ' + port); process.exit(0); } const pids = out.split(/\\s+/).filter(Boolean); execSync('kill -9 ' + pids.join(' ')); console.log('Killed process(es) on port ' + port + ': ' + pids.join(', ')); } catch { console.log('No process found on port ' + port); }\"",
+		"prestart": "npm run kill-port && npm run build",
+		"start": "node dist/server.js",
+		"typecheck": "tsc -p tsconfig.json --noEmit"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"dotenv": "^17.4.0",
+		"express": "^4.21.2",
+		"mongoose": "^9.3.3"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.0",
+		"@types/node": "^22.13.4",
+		"tsx": "^4.19.2",
+		"typescript": "^5.8.2"
+	}
+}
