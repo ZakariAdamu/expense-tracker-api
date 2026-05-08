@@ -9,6 +9,7 @@
 		"kill-port": "node -e \"require('dotenv').config(); const { execSync } = require('node:child_process'); const port = process.env.PORT || '8080'; try { const out = execSync('lsof -ti tcp:' + port, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); if (!out) { console.log('No process found on port ' + port); process.exit(0); } const pids = out.split(/\\s+/).filter(Boolean); execSync('kill -9 ' + pids.join(' ')); console.log('Killed process(es) on port ' + port + ': ' + pids.join(', ')); } catch { console.log('No process found on port ' + port); }\"",
 		"prestart": "npm run kill-port && npm run build",
 		"start": "node dist/server.js",
+		"preview": "npm run build && npm start",
 		"typecheck": "tsc -p tsconfig.json --noEmit"
 	},
 	"dependencies": {

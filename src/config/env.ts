@@ -8,7 +8,7 @@ function parsePort(value: string | undefined, fallback: number) {
 }
 
 export const env = {
-	port: parsePort(process.env.PORT, 4000),
+	port: parsePort(process.env.PORT, 5000),
 	mongoDbUri: process.env.MONGODBURI ?? process.env.MOGODBURI ?? "",
 };
 
