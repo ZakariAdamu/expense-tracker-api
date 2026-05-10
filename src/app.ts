@@ -1,71 +1,111 @@
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import express, {
 	type NextFunction,
 	type Request,
 	type Response,
 } from "express";
+import helmet from "helmet"; // ← Add this
+import compression from "compression"; // ← Add this (optional but recommended)
+
+// Import your routes
 import { healthRouter } from "./routes/health";
 import { summaryRouter } from "./routes/summary";
 import incomeRouter from "./routes/incomeRoute";
 import expenseRouter from "./routes/expenseRoute";
 import dashboardRouter from "./routes/dashboardRoute";
+import userRouter from "./routes/userRoute";
 
 export function createApp() {
 	const app = express();
 
-	app.use(cors());
-	app.use(express.json());
+	// ====================== MIDDLEWARE ======================
 
-	app.get("/", (_request: Request, response: Response) => {
-		response.json({
-			service: "finance-pro-backend",
-			message: "Backend is running",
-			endpoints: [
-				"GET /health",
-				"GET /api/summary",
-				"GET /api/incomes",
-				"POST /api/incomes",
-				"PUT /api/incomes/:id",
-				"DELETE /api/incomes/:id",
-				"GET /api/incomes/export/csv",
-				"GET /api/incomes/totals?month=<1-12>&year=<yyyy>",
-				"GET /api/expenses",
-				"POST /api/expenses",
-				"PUT /api/expenses/:id",
-				"DELETE /api/expenses/:id",
-				"GET /api/expenses/export/csv",
-				"GET /api/dashboard",
-				"GET /dashboard",
-			],
-		});
-	});
+	// 1. Security headers (Very Important)
+	app.use(helmet());
 
-	// ROUTES
+	// 2. CORS (Configure allowed origins based on environment)
+	// Determine which origin to allow
+	const getAllowedOrigins = () => {
+		const devUrl = process.env.FRONTEND_DEV_URL;
+		const prodUrl = process.env.FRONTEND_PROD_URL;
 
-	app.use(healthRouter);
-	app.use(summaryRouter);
-	app.use(incomeRouter);
-	app.use(expenseRouter);
-	app.use("/api/dashboard", dashboardRouter);
-	app.use("/dashboard", dashboardRouter);
-	app.use((_request: Request, response: Response) => {
-		response.status(404).json({
-			error: "Not found",
-		});
-	});
+		if (process.env.NODE_ENV === "production") {
+			return prodUrl ? [prodUrl] : [];
+		}
+
+		// In development, allow both localhost frontend + production (for testing)
+		return [devUrl, prodUrl].filter(Boolean) as string[];
+	};
 
 	app.use(
-		(
-			error: unknown,
-			_request: Request,
-			response: Response,
-			_next: NextFunction,
-		) => {
-			const message =
-				error instanceof Error ? error.message : "Unexpected server error";
+		cors({
+			origin: getAllowedOrigins(),
+			credentials: true, // ← Important for cookies (JWT)
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+			allowedHeaders: ["Content-Type", "Authorization"],
+		}),
+	);
 
-			response.status(500).json({
+	// 3. Compression (speeds up responses)
+	app.use(compression());
+
+	// 4. Body parsing
+	app.use(express.json({ limit: "10mb" })); // Prevent huge payloads
+	app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+	// 5. Cookie parser
+	app.use(cookieParser());
+
+	const limiter = rateLimit({
+		windowMs: 15 * 60 * 1000, // 15 minutes
+		max: 20, // limit each IP
+		standardHeaders: true,
+		legacyHeaders: false,
+	});
+	app.use("/api/users/login", limiter);
+	app.use("/api/users/register", limiter);
+	// ====================== BASIC ROUTE ======================
+	app.get("/", (_req: Request, res: Response) => {
+		res.json({
+			service: "finance-pro-backend",
+			status: "running",
+			version: process.env.npm_package_version || "1.0.0",
+			message: "Backend is healthy",
+		});
+	});
+
+	// ====================== ROUTES ======================
+	app.use("/api/health", healthRouter); // Better to mount with prefix
+	app.use("/api/users", userRouter);
+	app.use("/api/summary", summaryRouter);
+	app.use("/api/incomes", incomeRouter);
+	app.use("/api/expenses", expenseRouter);
+	app.use("/api/dashboard", dashboardRouter);
+
+	// Optional: Keep /dashboard if you serve some HTML/views
+	app.use("/dashboard", dashboardRouter);
+
+	// ====================== 404 HANDLER ======================
+	app.use((_req: Request, res: Response) => {
+		res.status(404).json({ error: "Route not found" });
+	});
+
+	// ====================== GLOBAL ERROR HANDLER ======================
+	app.use(
+		(error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+			console.error("Unhandled Error:", error); // Log for debugging
+
+			const message =
+				error instanceof Error ? error.message : "Internal server error";
+
+			res.status(500).json({
 				error: message,
+				// Only show stack in development
+				...(process.env.NODE_ENV === "development" && {
+					stack: error instanceof Error ? error.stack : undefined,
+				}),
 			});
 		},
 	);

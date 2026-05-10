@@ -1,6 +1,6 @@
 import express from "express";
 
-export const incomeRouter = express.Router();
+const incomeRouter = express.Router();
 
 import {
 	addIncome,
@@ -10,12 +10,13 @@ import {
 	exportIncomesToCSV,
 	getTotalIncomeByMonth,
 } from "../controllers/incomeController";
+import { protect } from "../middleware/auth";
 
-incomeRouter.post("/api/income", addIncome);
-incomeRouter.get("/api/incomes", getAllIncomes);
-incomeRouter.put("/api/incomes/:id", updateIncome);
-incomeRouter.delete("/api/incomes/:id", deleteIncome);
-incomeRouter.get("/api/incomes/export/csv", exportIncomesToCSV);
-incomeRouter.get("/api/incomes/totals", getTotalIncomeByMonth);
+incomeRouter.post("/income", protect, addIncome);
+incomeRouter.get("/incomes", protect, getAllIncomes);
+incomeRouter.put("/incomes/:id", protect, updateIncome);
+incomeRouter.delete("/incomes/:id", protect, deleteIncome);
+incomeRouter.get("/incomes/export/csv", protect, exportIncomesToCSV);
+incomeRouter.get("/incomes/totals", protect, getTotalIncomeByMonth);
 
 export default incomeRouter;
