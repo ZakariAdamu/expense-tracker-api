@@ -3,7 +3,7 @@ import { getMongoStatus } from "../db/mongo";
 
 export const healthRouter = Router();
 
-healthRouter.get("/health", (_request: Request, response: Response) => {
+healthRouter.get("/", (_request: Request, response: Response) => {
 	const mongo = getMongoStatus();
 
 	response.json({

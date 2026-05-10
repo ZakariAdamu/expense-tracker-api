@@ -11,7 +11,7 @@ function parsePort(value, fallback) {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 exports.env = {
-    port: parsePort(process.env.PORT, 4000),
+    port: parsePort(process.env.PORT, 5000),
     mongoDbUri: process.env.MONGODBURI ?? process.env.MOGODBURI ?? "",
 };
 exports.hasMongoDbUri = exports.env.mongoDbUri.length > 0;

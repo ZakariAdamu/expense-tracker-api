@@ -47,7 +47,7 @@ export async function initializeMongoConnection() {
 
 	try {
 		await mongoose.connect(env.mongoDbUri, {
-			serverSelectionTimeoutMS: 5000,
+			serverSelectionTimeoutMS: 40000,
 		});
 
 		status = {
