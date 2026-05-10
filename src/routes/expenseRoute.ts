@@ -11,10 +11,10 @@ import { protect } from "../middleware/auth";
 
 const expenseRouter = express.Router();
 
-expenseRouter.post("/expense", protect, addExpense);
-expenseRouter.get("/expeses", protect, getAllExpenses);
-expenseRouter.put("/expeses/:id", protect, updateExpense);
-expenseRouter.delete("/expeses/:id", protect, deleteExpense);
-expenseRouter.get("/expeses/export/csv", protect, exportExpensesAsCSV);
+expenseRouter.post("/", protect, addExpense);
+expenseRouter.get("/", protect, getAllExpenses);
+expenseRouter.put("/:id", protect, updateExpense);
+expenseRouter.delete("/:id", protect, deleteExpense);
+expenseRouter.get("/export/csv", protect, exportExpensesAsCSV);
 
 export default expenseRouter;

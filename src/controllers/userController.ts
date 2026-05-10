@@ -1,6 +1,6 @@
 import User from "../models/userModel";
 import * as z from "zod";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -29,6 +29,27 @@ const registerSchema = z
 const loginSchema = z.object({
 	email: z.email(),
 	password: z.string().min(1),
+});
+const updateProfileSchema = z
+	.object({
+		name: z.string().min(1).optional(),
+		email: z.email().optional(),
+		password: z.string().min(8).optional(),
+	})
+	.refine(
+		(data) => {
+			if (data.password) {
+				return data.password.length >= 8;
+			}
+			return true; // If password is not provided, it's valid
+		},
+		{
+			message: "Password must be at least 8 characters",
+		},
+	);
+const changePasswordSchema = z.object({
+	currentPassword: z.string().min(1, "Current password is required"),
+	newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
 // ====================== REGISTER or SIGNUP ======================
@@ -124,7 +145,7 @@ export async function logoutUser(req: any, res: any) {
 export async function updateProfile(req: any, res: any) {
 	try {
 		const userId = req.userId;
-		const { name, email, password } = req.body;
+		const { name, email, password } = updateProfileSchema.parse(req.body);
 		if (!name && !email && !password) {
 			return res.status(400).json({
 				message:
@@ -172,7 +193,9 @@ export async function updateProfile(req: any, res: any) {
 export async function changePassword(req: any, res: any) {
 	try {
 		const userId = req.userId;
-		const { currentPassword, newPassword } = req.body;
+		const { currentPassword, newPassword } = changePasswordSchema.parse(
+			req.body,
+		);
 
 		if (!currentPassword || !newPassword || newPassword.length < 8) {
 			return res.status(400).json({

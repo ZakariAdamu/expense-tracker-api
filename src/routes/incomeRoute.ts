@@ -12,11 +12,11 @@ import {
 } from "../controllers/incomeController";
 import { protect } from "../middleware/auth";
 
-incomeRouter.post("/income", protect, addIncome);
-incomeRouter.get("/incomes", protect, getAllIncomes);
-incomeRouter.put("/incomes/:id", protect, updateIncome);
-incomeRouter.delete("/incomes/:id", protect, deleteIncome);
-incomeRouter.get("/incomes/export/csv", protect, exportIncomesToCSV);
-incomeRouter.get("/incomes/totals", protect, getTotalIncomeByMonth);
+incomeRouter.post("/", protect, addIncome);
+incomeRouter.get("/", protect, getAllIncomes);
+incomeRouter.put("/:id", protect, updateIncome);
+incomeRouter.delete("/:id", protect, deleteIncome);
+incomeRouter.get("/export/csv", protect, exportIncomesToCSV);
+incomeRouter.get("/totals", protect, getTotalIncomeByMonth);
 
 export default incomeRouter;

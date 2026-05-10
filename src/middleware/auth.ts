@@ -10,7 +10,12 @@ export const protect = (req: any, res: any, next: any) => {
 			return res.status(401).json({ message: "You need to login first" });
 		}
 
-		const decoded = jwt.verify(token, jwtSecret!) as { id: string };
+		if (!jwtSecret) {
+			return res
+				.status(500)
+				.json({ message: "Internal server error: JWT secret missing" });
+		}
+		const decoded = jwt.verify(token, jwtSecret) as { id: string };
 		req.userId = decoded.id; // This is how we know who the user is
 		next(); // Go to the next function (controller)
 	} catch (error) {

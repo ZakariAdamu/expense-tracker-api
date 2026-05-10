@@ -15,7 +15,7 @@ userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.post("/logout", logoutUser);
 
-// Protected routes (need login)
+// Protected routes (need login to access)
 userRouter.get("/me", protect, getCurrentUser);
 userRouter.put("/update-profile", protect, updateProfile);
 userRouter.put("/change-password", protect, changePassword);
