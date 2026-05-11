@@ -14,7 +14,7 @@ const createToken = (userId: unknown) => {
 };
 
 // Validation schemas
-const registerSchema = z
+const signupSchema = z
 	.object({
 		name: z.string().min(1, "Name is required"),
 		email: z.email("Invalid email"),
@@ -52,10 +52,10 @@ const changePasswordSchema = z.object({
 	newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
-// ====================== REGISTER or SIGNUP ======================
-export async function registerUser(req: any, res: any) {
+// ====================== SIGNUP or SIGNUP ======================
+export async function signupUser(req: any, res: any) {
 	try {
-		const validated = registerSchema.parse(req.body);
+		const validated = signupSchema.parse(req.body);
 
 		if (await User.findOne({ email: validated.email })) {
 			return res.status(400).json({ message: "Email already in use" });
@@ -82,7 +82,7 @@ export async function registerUser(req: any, res: any) {
 		res.status(201).json({
 			success: true,
 			user: { id: user._id, name: user.name, email: user.email },
-			message: "User registered successfully",
+			message: "User signed up successfully",
 		});
 	} catch (error: any) {
 		if (error instanceof z.ZodError) {
@@ -101,7 +101,9 @@ export async function loginUser(req: any, res: any) {
 
 		const user = await User.findOne({ email });
 		if (!user || !(await bcrypt.compare(password, user.password))) {
-			return res.status(400).json({ message: "Invalid email or password" });
+			return res
+				.status(400)
+				.json({ message: "User doesn't exist or password is incorrect" });
 		}
 
 		const token = createToken(user._id.toString());
@@ -121,7 +123,7 @@ export async function loginUser(req: any, res: any) {
 	} catch (error: any) {
 		if (error instanceof z.ZodError)
 			return res.status(400).json({ message: "Invalid input" });
-		res.status(500).json({ message: "Server error" });
+		res.status(500).json({ message: error.message || "Server error" });
 	}
 }
 

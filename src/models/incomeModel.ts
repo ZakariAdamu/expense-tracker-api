@@ -31,11 +31,11 @@ const incomeSchema = new Schema<IIncome>(
 			required: true,
 			default: Date.now,
 		},
-		// userId: {
-		// 	type: Schema.Types.ObjectId,
-		// 	ref: "user",
-		// 	required: false, // set to true if every income must belong to a user
-		// },
+		userId: {
+			type: Schema.Types.ObjectId,
+			ref: "user",
+			required: true, // income for a particular user
+		},
 		type: {
 			type: String,
 			enum: ["income"],

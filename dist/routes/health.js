@@ -4,7 +4,7 @@ exports.healthRouter = void 0;
 const express_1 = require("express");
 const mongo_1 = require("../db/mongo");
 exports.healthRouter = (0, express_1.Router)();
-exports.healthRouter.get("/health", (_request, response) => {
+exports.healthRouter.get("/", (_request, response) => {
     const mongo = (0, mongo_1.getMongoStatus)();
     response.json({
         status: "ok",

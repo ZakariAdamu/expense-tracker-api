@@ -1,38 +1,4 @@
 import incomeModel from "../models/incomeModel";
-import mongoose from "mongoose";
-import { randomUUID } from "node:crypto";
-
-function isMongoConnected() {
-	return mongoose.connection.readyState === 1;
-}
-
-type MemoryIncome = {
-	_id: string;
-	description: string;
-	amount: number;
-	category: string;
-	date: Date;
-	type: "income";
-};
-
-const fallbackIncomes: MemoryIncome[] = [
-	{
-		_id: randomUUID(),
-		description: "Consulting Payment",
-		amount: 4200,
-		category: "Consulting",
-		date: new Date("2026-04-01T10:00:00.000Z"),
-		type: "income",
-	},
-	{
-		_id: randomUUID(),
-		description: "Dividend Distribution",
-		amount: 860,
-		category: "Investments",
-		date: new Date("2026-03-25T10:00:00.000Z"),
-		type: "income",
-	},
-];
 
 function toDate(value: unknown, fallback: Date) {
 	if (!value) return fallback;
@@ -80,9 +46,9 @@ function sortByDateDesc<T extends { date: Date }>(items: T[]) {
 // add income
 
 export const addIncome = async (req: any, res: any) => {
+	const userId = req.userId; // from auth middleware
+	const { description, amount, category, date } = req.body;
 	try {
-		const { description, amount, category, date } = req.body;
-
 		if (missingRequiredIncomeFields(description, amount, category)) {
 			return res.status(400).json({
 				message: "description, amount, and category are required",
@@ -94,86 +60,43 @@ export const addIncome = async (req: any, res: any) => {
 			return res.status(400).json({ message: "amount must be a number >= 0" });
 		}
 
-		if (!isMongoConnected()) {
-			const income: MemoryIncome = {
-				_id: randomUUID(),
-				description: String(description),
-				amount: parsedAmount,
-				category: String(category),
-				date: toDate(date, new Date()),
-				type: "income",
-			};
-
-			fallbackIncomes.push(income);
-			return res.status(201).json(income);
-		}
-
 		const income = new incomeModel({
+			userId,
 			description,
 			amount: parsedAmount,
 			category,
 			date: toDate(date, new Date()),
 		});
 		await income.save();
-		res.status(201).json(income);
+		res.status(201).json({ message: "Income added successfully", income });
 	} catch (error) {
-		res.status(400).json({ message: "Server error", error });
+		res.status(400).json({ status: "error", message: "Server error", error });
 	}
 };
 
 // get all incomes
 
 export const getAllIncomes = async (req: any, res: any) => {
+	const userId = req.userId; // from auth middleware
 	try {
-		if (!isMongoConnected()) {
-			return res.status(200).json(sortByDateDesc(fallbackIncomes));
-		}
-
-		const incomes = await incomeModel.find().sort({ date: -1 });
-		res.status(200).json(incomes);
+		const incomes = await incomeModel.find({ userId }).sort({ date: -1 });
+		res
+			.status(200)
+			.json({ message: "Incomes retrieved successfully", incomes });
 	} catch (error) {
-		res.status(400).json({ message: "Server error", error });
+		res.status(400).json({ status: "error", message: "Server error", error });
 	}
 };
 
 // update an income
 
 export const updateIncome = async (req: any, res: any) => {
+	const { id } = req.params;
+	const userId = req.userId; // from auth middleware
+	const { description, amount, category, date } = req.body;
 	try {
-		const { id } = req.params;
-		const { description, amount, category, date } = req.body;
-
-		if (!isMongoConnected()) {
-			const index = fallbackIncomes.findIndex((income) => income._id === id);
-			if (index === -1) {
-				return res.status(404).json({ message: "Income not found" });
-			}
-
-			const current = fallbackIncomes[index];
-			const nextAmount =
-				amount === undefined ? current.amount : toAmount(amount);
-
-			if (Number.isNaN(nextAmount) || nextAmount < 0) {
-				return res
-					.status(400)
-					.json({ message: "amount must be a number >= 0" });
-			}
-
-			const updated: MemoryIncome = {
-				...current,
-				description:
-					description === undefined ? current.description : String(description),
-				amount: nextAmount,
-				category: category === undefined ? current.category : String(category),
-				date: date === undefined ? current.date : toDate(date, current.date),
-			};
-
-			fallbackIncomes[index] = updated;
-			return res.status(200).json(updated);
-		}
-
-		const updatedIncome = await incomeModel.findByIdAndUpdate(
-			id,
+		const updatedIncome = await incomeModel.findOneAndUpdate(
+			{ _id: id, userId },
 			{
 				description,
 				amount: amount === undefined ? undefined : toAmount(amount),
@@ -184,12 +107,20 @@ export const updateIncome = async (req: any, res: any) => {
 		);
 
 		if (!updatedIncome) {
-			return res.status(404).json({ message: "Income not found" });
+			return res
+				.status(404)
+				.json({ status: "error", message: "Income not found" });
 		}
 
-		res.status(200).json(updatedIncome);
+		res.status(200).json({
+			status: "success",
+			message: "Income updated successfully",
+			income: updatedIncome,
+		});
 	} catch (error) {
-		res.status(400).json({ message: "Server error", error });
+		const message =
+			error instanceof Error ? error.message : "Unable to update income";
+		res.status(400).json({ status: "error", message, error });
 	}
 };
 
@@ -198,31 +129,25 @@ export const updateIncome = async (req: any, res: any) => {
 export const deleteIncome = async (req: any, res: any) => {
 	try {
 		const { id } = req.params;
+		const userId = req.userId; // from auth middleware
 
-		if (!isMongoConnected()) {
-			const index = fallbackIncomes.findIndex((income) => income._id === id);
-			if (index === -1) {
-				return res.status(404).json({ message: "Income not found" });
-			}
-
-			fallbackIncomes.splice(index, 1);
-			return res.status(200).json({ message: "Income deleted successfully" });
-		}
-
-		await incomeModel.findByIdAndDelete(id);
-		res.status(200).json({ message: "Income deleted successfully" });
+		await incomeModel.findOneAndDelete({ _id: id, userId });
+		res
+			.status(200)
+			.json({ status: "success", message: "Income deleted successfully" });
 	} catch (error) {
-		res.status(400).json({ message: "Unable to delete income", error });
+		res
+			.status(400)
+			.json({ status: "error", message: "Unable to delete income", error });
 	}
 };
 
-// csv export
+// csv export: download incomes as a CSV file
 
 export const exportIncomesToCSV = async (req: any, res: any) => {
+	const userId = req.userId; // from auth middleware
 	try {
-		const incomes = !isMongoConnected()
-			? sortByDateDesc(fallbackIncomes)
-			: await incomeModel.find().sort({ date: -1 });
+		const incomes = await incomeModel.find({ userId }).sort({ date: -1 });
 
 		const csvData = [
 			["Description", "Amount", "Category", "Date"],
@@ -240,7 +165,11 @@ export const exportIncomesToCSV = async (req: any, res: any) => {
 		res.setHeader("Content-Disposition", "attachment; filename=incomes.csv");
 		res.status(200).send(csvData);
 	} catch (error) {
-		res.status(400).json({ message: "Server error", error });
+		const message =
+			error instanceof Error
+				? error.message
+				: "Unable to export incomes to CSV";
+		res.status(400).json({ status: "error", message, error });
 	}
 };
 
@@ -248,6 +177,7 @@ export const exportIncomesToCSV = async (req: any, res: any) => {
 
 export const getTotalIncomeByMonth = async (req: any, res: any) => {
 	try {
+		const userId = req.userId; // from auth middleware
 		const { month, year } = req.query;
 		const range = getMonthRange(month, year);
 
@@ -259,17 +189,10 @@ export const getTotalIncomeByMonth = async (req: any, res: any) => {
 
 		const { startDate, endDate } = range;
 
-		if (!isMongoConnected()) {
-			const totalIncome = fallbackIncomes
-				.filter((income) => income.date >= startDate && income.date <= endDate)
-				.reduce((sum, income) => sum + income.amount, 0);
-
-			return res.status(200).json({ totalIncome });
-		}
-
 		const totalIncome = await incomeModel.aggregate([
 			{
 				$match: {
+					userId,
 					date: { $gte: startDate, $lte: endDate },
 				},
 			},
@@ -282,6 +205,8 @@ export const getTotalIncomeByMonth = async (req: any, res: any) => {
 		]);
 		res.status(200).json({ totalIncome: totalIncome[0]?.total || 0 });
 	} catch (error) {
-		res.status(400).json({ message: "Server error", error });
+		const message =
+			error instanceof Error ? error.message : "Unable to get total income";
+		res.status(400).json({ status: "error", message, error });
 	}
 };

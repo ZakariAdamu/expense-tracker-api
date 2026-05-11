@@ -4,13 +4,12 @@
 	"private": true,
 	"type": "commonjs",
 	"scripts": {
-		"dev": "tsx watch src/server.ts",
-		"build": "tsc -p tsconfig.json",
-		"kill-port": "node -e \"require('dotenv').config(); const { execSync } = require('node:child_process'); const port = process.env.PORT || '8080'; try { const out = execSync('lsof -ti tcp:' + port, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); if (!out) { console.log('No process found on port ' + port); process.exit(0); } const pids = out.split(/\\s+/).filter(Boolean); execSync('kill -9 ' + pids.join(' ')); console.log('Killed process(es) on port ' + port + ': ' + pids.join(', ')); } catch { console.log('No process found on port ' + port); }\"",
+		"dev": "nodemon --exec ts-node src/server.ts",
+		"build": "tsc",
+		"lint": "eslint src --ext .ts",
+		"type-check": "tsc --noEmit",
 		"prestart": "npm run kill-port && npm run build",
-		"start": "node dist/server.js",
-		"preview": "npm run build && npm start",
-		"typecheck": "tsc -p tsconfig.json --noEmit"
+		"start": "node dist/server.js"
 	},
 	"dependencies": {
 		"bcrypt": "^6.0.0",
@@ -33,6 +32,8 @@
 		"@types/express": "^5.0.0",
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^22.13.4",
+		"nodemon": "^3.1.14",
+		"ts-node-dev": "^2.0.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2"
 	}
