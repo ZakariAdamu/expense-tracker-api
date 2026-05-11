@@ -40,7 +40,7 @@ async function initializeMongoConnection() {
     }
     try {
         await mongoose_1.default.connect(env_1.env.mongoDbUri, {
-            serverSelectionTimeoutMS: 60000,
+            serverSelectionTimeoutMS: 8000,
         });
         status = {
             configured: true,

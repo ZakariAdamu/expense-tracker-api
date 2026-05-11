@@ -21,12 +21,20 @@ const expenseSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
+    userId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "user",
+        required: true, // expense for a particular user
+    },
     type: {
         type: String,
         enum: ["expense"],
         default: "expense",
-        required: false,
+        required: true,
     },
+}, {
+    timestamps: true,
+    versionKey: false,
 });
 const expenseModel = mongoose_1.default.model("Expense", expenseSchema);
 exports.default = expenseModel;
