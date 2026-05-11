@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { userInfo } from "os";
 
 const expenseSchema = new mongoose.Schema(
 	{

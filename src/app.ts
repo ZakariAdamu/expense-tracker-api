@@ -65,7 +65,8 @@ export function createApp() {
 		legacyHeaders: false,
 	});
 	app.use("/api/users/login", limiter);
-	app.use("/api/users/register", limiter);
+	app.use("/api/users/signup", limiter);
+
 	// ====================== BASIC ROUTE ======================
 	app.get("/", (_req: Request, res: Response) => {
 		res.json({

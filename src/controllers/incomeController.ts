@@ -95,7 +95,7 @@ export const updateIncome = async (req: any, res: any) => {
 	const userId = req.userId; // from auth middleware
 	const { description, amount, category, date } = req.body;
 	try {
-		const updatedIncome = await incomeModel.findByIdAndUpdate(
+		const updatedIncome = await incomeModel.findOneAndUpdate(
 			{ _id: id, userId },
 			{
 				description,
@@ -131,7 +131,7 @@ export const deleteIncome = async (req: any, res: any) => {
 		const { id } = req.params;
 		const userId = req.userId; // from auth middleware
 
-		await incomeModel.findByIdAndDelete({ _id: id, userId });
+		await incomeModel.findOneAndDelete({ _id: id, userId });
 		res
 			.status(200)
 			.json({ status: "success", message: "Income deleted successfully" });

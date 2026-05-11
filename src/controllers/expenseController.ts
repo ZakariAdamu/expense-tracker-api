@@ -45,7 +45,7 @@ export const updateExpense = async (req: any, res: any) => {
 	try {
 		const { id } = req.params;
 		const { description, amount, category, date } = req.body;
-		const expense = await expenseModel.findByIdAndUpdate(
+		const expense = await expenseModel.findOneAndUpdate(
 			{ _id: id, userId },
 			{ description, amount, category, date },
 			{ new: true },
@@ -67,7 +67,7 @@ export const deleteExpense = async (req: any, res: any) => {
 	try {
 		const { id } = req.params;
 		const userId = req.userId; // from auth middleware
-		const expense = await expenseModel.findByIdAndDelete({ _id: id, userId });
+		const expense = await expenseModel.findOneAndDelete({ _id: id, userId });
 		res.status(200).json({
 			status: "success",
 			message: "Expense deleted successfully",
