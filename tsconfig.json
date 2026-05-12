@@ -19,7 +19,7 @@
       "cors",
       "dotenv",
       "jsonwebtoken",
-      "bcryptjs",
+      "bcrypt",
       "cookie-parser",
       "compression",
       "helmet"
