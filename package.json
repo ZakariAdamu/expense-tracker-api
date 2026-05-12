@@ -14,7 +14,7 @@
     "prestart": "npm run build",
     "prepush": "npm run type-check && npm run build",
     "start": "node dist/server.js",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') require('husky')\""
   },
   "lint-staged": {
     "*.ts": [
