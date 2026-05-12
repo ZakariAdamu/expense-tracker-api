@@ -13,7 +13,17 @@
     "allowSyntheticDefaultImports": true,
     "rewriteRelativeImportExtensions": true,
     "allowImportingTsExtensions": true,
-    "types": ["node", "express"]
+    "types": [
+      "node",
+      "express",
+      "cors",
+      "dotenv",
+      "jsonwebtoken",
+      "bcrypt",
+      "cookie-parser",
+      "compression",
+      "helmet"
+    ]
   },
   "ts-node": {
     "esm": true,
