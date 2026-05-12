@@ -1,13 +1,13 @@
 import express from "express";
 
 import {
-	addExpense,
-	getAllExpenses,
-	updateExpense,
-	deleteExpense,
-	exportExpensesAsCSV,
-} from "../controllers/expenseController";
-import { protect } from "../middleware/auth";
+  addExpense,
+  getAllExpenses,
+  updateExpense,
+  deleteExpense,
+  exportExpensesAsCSV,
+} from "../controllers/expenseController.ts";
+import { protect } from "../middleware/auth.ts";
 
 const expenseRouter = express.Router();
 

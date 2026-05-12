@@ -1,18 +1,18 @@
 import { Router, type Request, type Response } from "express";
-import { getMongoStatus } from "../db/mongo";
+import { getMongoStatus } from "../db/mongo.ts";
 
 export const healthRouter = Router();
 
 healthRouter.get("/", (_request: Request, response: Response) => {
-	const mongo = getMongoStatus();
+  const mongo = getMongoStatus();
 
-	response.json({
-		status: "ok",
-		service: "finance-pro-backend",
-		timestamp: new Date().toISOString(),
-		database: {
-			provider: "mongodb",
-			...mongo,
-		},
-	});
+  response.json({
+    status: "ok",
+    service: "finance-pro-backend",
+    timestamp: new Date().toISOString(),
+    database: {
+      provider: "mongodb",
+      ...mongo,
+    },
+  });
 });

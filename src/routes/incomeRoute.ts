@@ -3,14 +3,14 @@ import express from "express";
 const incomeRouter = express.Router();
 
 import {
-	addIncome,
-	getAllIncomes,
-	updateIncome,
-	deleteIncome,
-	exportIncomesToCSV,
-	getTotalIncomeByMonth,
-} from "../controllers/incomeController";
-import { protect } from "../middleware/auth";
+  addIncome,
+  getAllIncomes,
+  updateIncome,
+  deleteIncome,
+  exportIncomesToCSV,
+  getTotalIncomeByMonth,
+} from "../controllers/incomeController.js";
+import { protect } from "../middleware/auth.js";
 
 incomeRouter.post("/", protect, addIncome);
 incomeRouter.get("/", protect, getAllIncomes);

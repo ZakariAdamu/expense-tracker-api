@@ -1,13 +1,13 @@
 import express from "express";
 import {
-	signupUser,
-	loginUser,
-	logoutUser,
-	getCurrentUser,
-	updateProfile,
-	changePassword,
-} from "../controllers/userController";
-import { protect } from "../middleware/auth";
+  signupUser,
+  loginUser,
+  logoutUser,
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+} from "../controllers/userController.ts";
+import { protect } from "../middleware/auth.ts";
 
 const userRouter = express.Router();
 

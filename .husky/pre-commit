@@ -1,0 +1,7 @@
+
+echo "🔍 Running pre-commit checks..."
+
+# Run linting + formatting on staged files
+npx lint-staged
+
+echo "✅ Pre-commit passed!"
