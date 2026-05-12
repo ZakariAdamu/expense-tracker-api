@@ -68,11 +68,12 @@ export const getDashboardData = async (req: Request, res: Response) => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
-    const savings =
-      (monthlyIncome[0]?.total || 0) - (monthlyExpense[0]?.total || 0);
+    const totalIncomeValue = totalIncome[0]?.total || 0;
+    const totalExpenseValue = totalExpense[0]?.total || 0;
 
-    const savingsRate = monthlyIncome[0]?.total
-      ? (savings / monthlyIncome[0].total) * 100
+    const savings = totalIncomeValue - totalExpenseValue;
+    const savingsRate = totalIncomeValue
+      ? (savings / totalIncomeValue) * 100
       : 0;
 
     const recentTransactions = await Promise.all([
@@ -117,8 +118,8 @@ export const getDashboardData = async (req: Request, res: Response) => {
     }));
 
     res.status(200).json({
-      totalIncome: totalIncome[0]?.total || 0,
-      totalExpense: totalExpense[0]?.total || 0,
+      totalIncome: totalIncomeValue,
+      totalExpense: totalExpenseValue,
       savings,
       savingsRate,
       recentTransactions,
