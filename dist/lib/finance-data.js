@@ -1,13 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.recentTransactions = exports.portfolioSummary = void 0;
-exports.portfolioSummary = {
+export const portfolioSummary = {
     balance: 128400.91,
     monthlyIncome: 9200,
     monthlySpend: 4821.44,
     savingsRate: 37.6,
 };
-exports.recentTransactions = [
+export const recentTransactions = [
     {
         id: "txn_001",
         description: "Payroll Deposit",

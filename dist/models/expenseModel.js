@@ -1,10 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const expenseSchema = new mongoose_1.default.Schema({
+import { Schema, model } from "mongoose";
+const expenseSchema = new Schema({
     amount: {
         type: Number,
         required: true,
@@ -22,7 +17,7 @@ const expenseSchema = new mongoose_1.default.Schema({
         required: true,
     },
     userId: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "user",
         required: true, // expense for a particular user
     },
@@ -36,5 +31,5 @@ const expenseSchema = new mongoose_1.default.Schema({
     timestamps: true,
     versionKey: false,
 });
-const expenseModel = mongoose_1.default.model("Expense", expenseSchema);
-exports.default = expenseModel;
+const expenseModel = model("Expense", expenseSchema);
+export default expenseModel;

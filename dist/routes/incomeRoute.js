@@ -1,16 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const incomeRouter = express_1.default.Router();
-const incomeController_1 = require("../controllers/incomeController");
-const auth_1 = require("../middleware/auth");
-incomeRouter.post("/", auth_1.protect, incomeController_1.addIncome);
-incomeRouter.get("/", auth_1.protect, incomeController_1.getAllIncomes);
-incomeRouter.put("/:id", auth_1.protect, incomeController_1.updateIncome);
-incomeRouter.delete("/:id", auth_1.protect, incomeController_1.deleteIncome);
-incomeRouter.get("/export/csv", auth_1.protect, incomeController_1.exportIncomesToCSV);
-incomeRouter.get("/totals", auth_1.protect, incomeController_1.getTotalIncomeByMonth);
-exports.default = incomeRouter;
+import express from "express";
+const incomeRouter = express.Router();
+import { addIncome, getAllIncomes, updateIncome, deleteIncome, exportIncomesToCSV, getTotalIncomeByMonth, } from "../controllers/incomeController.js";
+import { protect } from "../middleware/auth.js";
+incomeRouter.post("/", protect, addIncome);
+incomeRouter.get("/", protect, getAllIncomes);
+incomeRouter.put("/:id", protect, updateIncome);
+incomeRouter.delete("/:id", protect, deleteIncome);
+incomeRouter.get("/export/csv", protect, exportIncomesToCSV);
+incomeRouter.get("/totals", protect, getTotalIncomeByMonth);
+export default incomeRouter;

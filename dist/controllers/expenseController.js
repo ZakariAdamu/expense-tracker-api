@@ -1,16 +1,13 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportExpensesAsCSV = exports.deleteExpense = exports.updateExpense = exports.getAllExpenses = exports.addExpense = void 0;
-const expenseModel_1 = __importDefault(require("../models/expenseModel"));
+import expenseModel from "../models/expenseModel.js";
 // add expense
-const addExpense = async (req, res) => {
+export const addExpense = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     try {
         const { description, amount, category, date } = req.body;
-        const expense = new expenseModel_1.default({
+        const expense = new expenseModel({
             userId,
             description,
             amount,
@@ -25,33 +22,35 @@ const addExpense = async (req, res) => {
         });
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Unable to add expense";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.addExpense = addExpense;
 // get all expenses
-const getAllExpenses = async (req, res) => {
+export const getAllExpenses = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     try {
-        const expenses = await expenseModel_1.default.find({ userId }).sort({ date: -1 });
+        const expenses = await expenseModel.find({ userId }).sort({ date: -1 });
         res.status(200).json({ status: "success", expenses });
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Unable to fetch expenses";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.getAllExpenses = getAllExpenses;
 // update expense
-const updateExpense = async (req, res) => {
+export const updateExpense = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     try {
         const { id } = req.params;
         const { description, amount, category, date } = req.body;
-        const expense = await expenseModel_1.default.findOneAndUpdate({ _id: id, userId }, { description, amount, category, date }, { new: true });
+        const expense = await expenseModel.findOneAndUpdate({ _id: id, userId }, { description, amount, category, date }, { new: true });
         res.status(200).json({
             status: "success",
             message: "Expense updated successfully",
@@ -59,18 +58,19 @@ const updateExpense = async (req, res) => {
         });
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Unable to update expense";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.updateExpense = updateExpense;
 // delete expense
-const deleteExpense = async (req, res) => {
+export const deleteExpense = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId; // from auth middleware
-        const expense = await expenseModel_1.default.findOneAndDelete({ _id: id, userId });
+        if (!userId) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+        const expense = await expenseModel.findOneAndDelete({ _id: id, userId });
         res.status(200).json({
             status: "success",
             message: "Expense deleted successfully",
@@ -78,33 +78,35 @@ const deleteExpense = async (req, res) => {
         });
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Unable to delete expense";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.deleteExpense = deleteExpense;
 // export all expenses as csv
-const exportExpensesAsCSV = async (req, res) => {
+export const exportExpensesAsCSV = async (req, res) => {
     try {
         const userId = req.userId; // from auth middleware
-        const expenses = await expenseModel_1.default.find({ userId }).sort({ date: -1 });
-        const csvData = expenses.map((expense) => ({
-            description: expense.description,
-            amount: expense.amount,
-            category: expense.category,
-            date: expense.date,
-        }));
-        res.status(200).json({
-            status: "success",
-            message: "Expenses exported as CSV",
-            data: csvData,
-        });
+        if (!userId) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+        const expenses = await expenseModel.find({ userId }).sort({ date: -1 });
+        const csvData = [
+            ["Description", "Amount", "Category", "Date"],
+            ...expenses.map((expense) => [
+                String(expense.description),
+                String(expense.amount),
+                String(expense.category),
+                new Date(expense.date).toISOString(),
+            ]),
+        ]
+            .map((row) => row.join(","))
+            .join("\n");
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", "attachment; filename=expenses.csv");
+        res.status(200).send(csvData);
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Unable to export expenses";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.exportExpensesAsCSV = exportExpensesAsCSV;

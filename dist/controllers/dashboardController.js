@@ -1,18 +1,18 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDashboardData = void 0;
-const incomeModel_1 = __importDefault(require("../models/incomeModel"));
-const expenseModel_1 = __importDefault(require("../models/expenseModel"));
-const getDashboardData = async (req, res) => {
+import mongoose from "mongoose";
+import incomeModel from "../models/incomeModel.js";
+import expenseModel from "../models/expenseModel.js";
+export const getDashboardData = async (req, res) => {
+    if (!req.userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
+    const userId = new mongoose.Types.ObjectId(req.userId);
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     try {
-        const totalIncome = await incomeModel_1.default.aggregate([
+        const totalIncome = await incomeModel.aggregate([
             {
                 $match: {
+                    userId,
                     date: { $gte: startOfMonth, $lte: now },
                 },
             },
@@ -23,9 +23,10 @@ const getDashboardData = async (req, res) => {
                 },
             },
         ]);
-        const totalExpense = await expenseModel_1.default.aggregate([
+        const totalExpense = await expenseModel.aggregate([
             {
                 $match: {
+                    userId,
                     date: { $gte: startOfMonth, $lte: now },
                 },
             },
@@ -36,7 +37,8 @@ const getDashboardData = async (req, res) => {
                 },
             },
         ]);
-        const monthlyIncome = await incomeModel_1.default.aggregate([
+        const monthlyIncome = await incomeModel.aggregate([
+            { $match: { userId } },
             {
                 $group: {
                     _id: { month: { $month: "$date" }, year: { $year: "$date" } },
@@ -45,7 +47,8 @@ const getDashboardData = async (req, res) => {
             },
             { $sort: { "_id.year": 1, "_id.month": 1 } },
         ]);
-        const monthlyExpense = await expenseModel_1.default.aggregate([
+        const monthlyExpense = await expenseModel.aggregate([
+            { $match: { userId } },
             {
                 $group: {
                     _id: { month: { $month: "$date" }, year: { $year: "$date" } },
@@ -59,11 +62,14 @@ const getDashboardData = async (req, res) => {
             ? (savings / monthlyIncome[0].total) * 100
             : 0;
         const recentTransactions = await Promise.all([
-            incomeModel_1.default.find().sort({ date: -1 }).limit(5),
-            expenseModel_1.default.find().sort({ date: -1 }).limit(5),
+            incomeModel.find({ userId }).sort({ date: -1 }).limit(5),
+            expenseModel.find({ userId }).sort({ date: -1 }).limit(5),
         ]).then(([incomes, expenses]) => {
             const transactions = [
-                ...incomes.map((income) => ({ ...income.toObject(), type: "income" })),
+                ...incomes.map((income) => ({
+                    ...income.toObject(),
+                    type: "income",
+                })),
                 ...expenses.map((expense) => ({
                     ...expense.toObject(),
                     type: "expense",
@@ -73,7 +79,8 @@ const getDashboardData = async (req, res) => {
                 .sort((a, b) => b.date.getTime() - a.date.getTime())
                 .slice(0, 5);
         });
-        const spendingByCategory = await expenseModel_1.default.aggregate([
+        const spendingByCategory = await expenseModel.aggregate([
+            { $match: { userId } },
             {
                 $group: {
                     _id: "$category",
@@ -103,7 +110,7 @@ const getDashboardData = async (req, res) => {
         });
     }
     catch (error) {
-        res.status(400).json({ message: "Server error", error });
+        const message = error instanceof Error ? error.message : "Unable to load dashboard";
+        res.status(400).json({ message, error: message });
     }
 };
-exports.getDashboardData = getDashboardData;

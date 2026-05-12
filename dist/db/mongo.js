@@ -1,26 +1,19 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMongoStatus = getMongoStatus;
-exports.initializeMongoConnection = initializeMongoConnection;
-const mongoose_1 = __importDefault(require("mongoose"));
-const env_1 = require("../config/env");
+import mongoose from "mongoose";
+import { env, hasMongoDbUri } from "../config/env.js";
 let status = {
-    configured: env_1.hasMongoDbUri,
-    validUri: isValidMongoUri(env_1.env.mongoDbUri),
+    configured: hasMongoDbUri,
+    validUri: isValidMongoUri(env.mongoDbUri),
     connected: false,
-    message: env_1.hasMongoDbUri ? "MongoDB URI configured" : "MONGODBURI is not set",
+    message: hasMongoDbUri ? "MongoDB URI configured" : "MONGODBURI is not set",
 };
 function isValidMongoUri(uri) {
     return uri.startsWith("mongodb://") || uri.startsWith("mongodb+srv://");
 }
-function getMongoStatus() {
+export function getMongoStatus() {
     return status;
 }
-async function initializeMongoConnection() {
-    if (!env_1.hasMongoDbUri) {
+export async function initializeMongoConnection() {
+    if (!hasMongoDbUri) {
         status = {
             configured: false,
             validUri: false,
@@ -29,7 +22,7 @@ async function initializeMongoConnection() {
         };
         return status;
     }
-    if (!isValidMongoUri(env_1.env.mongoDbUri)) {
+    if (!isValidMongoUri(env.mongoDbUri)) {
         status = {
             configured: true,
             validUri: false,
@@ -39,7 +32,7 @@ async function initializeMongoConnection() {
         return status;
     }
     try {
-        await mongoose_1.default.connect(env_1.env.mongoDbUri, {
+        await mongoose.connect(env.mongoDbUri, {
             serverSelectionTimeoutMS: 8000,
         });
         status = {

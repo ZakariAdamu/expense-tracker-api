@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { portfolioSummary, recentTransactions } from "../lib/finance-data";
+import { portfolioSummary, recentTransactions } from "../lib/finance-data.ts";
 
 export const summaryRouter = Router();
 
-summaryRouter.get("/api/summary", (_request, response) => {
-	response.json({
-		summary: portfolioSummary,
-		recentTransactions,
-	});
+summaryRouter.get("/", (_request, response) => {
+  response.json({
+    summary: portfolioSummary,
+    recentTransactions,
+  });
 });

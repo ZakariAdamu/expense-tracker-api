@@ -1,10 +1,4 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTotalIncomeByMonth = exports.exportIncomesToCSV = exports.deleteIncome = exports.updateIncome = exports.getAllIncomes = exports.addIncome = void 0;
-const incomeModel_1 = __importDefault(require("../models/incomeModel"));
+import incomeModel from "../models/incomeModel.js";
 function toDate(value, fallback) {
     if (!value)
         return fallback;
@@ -32,12 +26,12 @@ function getMonthRange(month, year) {
     const endDate = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999);
     return { startDate, endDate };
 }
-function sortByDateDesc(items) {
-    return [...items].sort((a, b) => b.date.getTime() - a.date.getTime());
-}
 // add income
-const addIncome = async (req, res) => {
+export const addIncome = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     const { description, amount, category, date } = req.body;
     try {
         if (missingRequiredIncomeFields(description, amount, category)) {
@@ -49,7 +43,7 @@ const addIncome = async (req, res) => {
         if (Number.isNaN(parsedAmount) || parsedAmount < 0) {
             return res.status(400).json({ message: "amount must be a number >= 0" });
         }
-        const income = new incomeModel_1.default({
+        const income = new incomeModel({
             userId,
             description,
             amount: parsedAmount,
@@ -60,31 +54,37 @@ const addIncome = async (req, res) => {
         res.status(201).json({ message: "Income added successfully", income });
     }
     catch (error) {
-        res.status(400).json({ status: "error", message: "Server error", error });
+        const message = error instanceof Error ? error.message : "Unable to add income";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.addIncome = addIncome;
 // get all incomes
-const getAllIncomes = async (req, res) => {
+export const getAllIncomes = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     try {
-        const incomes = await incomeModel_1.default.find({ userId }).sort({ date: -1 });
+        const incomes = await incomeModel.find({ userId }).sort({ date: -1 });
         res
             .status(200)
             .json({ message: "Incomes retrieved successfully", incomes });
     }
     catch (error) {
-        res.status(400).json({ status: "error", message: "Server error", error });
+        const message = error instanceof Error ? error.message : "Unable to fetch incomes";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.getAllIncomes = getAllIncomes;
 // update an income
-const updateIncome = async (req, res) => {
+export const updateIncome = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     const { description, amount, category, date } = req.body;
     try {
-        const updatedIncome = await incomeModel_1.default.findOneAndUpdate({ _id: id, userId }, {
+        const updatedIncome = await incomeModel.findOneAndUpdate({ _id: id, userId }, {
             description,
             amount: amount === undefined ? undefined : toAmount(amount),
             category,
@@ -103,32 +103,35 @@ const updateIncome = async (req, res) => {
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "Unable to update income";
-        res.status(400).json({ status: "error", message, error });
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.updateIncome = updateIncome;
 // delete an income
-const deleteIncome = async (req, res) => {
+export const deleteIncome = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.userId; // from auth middleware
-        await incomeModel_1.default.findOneAndDelete({ _id: id, userId });
+        if (!userId) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+        await incomeModel.findOneAndDelete({ _id: id, userId });
         res
             .status(200)
             .json({ status: "success", message: "Income deleted successfully" });
     }
     catch (error) {
-        res
-            .status(400)
-            .json({ status: "error", message: "Unable to delete income", error });
+        const message = error instanceof Error ? error.message : "Unable to delete income";
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.deleteIncome = deleteIncome;
 // csv export: download incomes as a CSV file
-const exportIncomesToCSV = async (req, res) => {
+export const exportIncomesToCSV = async (req, res) => {
     const userId = req.userId; // from auth middleware
+    if (!userId) {
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
     try {
-        const incomes = await incomeModel_1.default.find({ userId }).sort({ date: -1 });
+        const incomes = await incomeModel.find({ userId }).sort({ date: -1 });
         const csvData = [
             ["Description", "Amount", "Category", "Date"],
             ...incomes.map((income) => [
@@ -148,14 +151,16 @@ const exportIncomesToCSV = async (req, res) => {
         const message = error instanceof Error
             ? error.message
             : "Unable to export incomes to CSV";
-        res.status(400).json({ status: "error", message, error });
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.exportIncomesToCSV = exportIncomesToCSV;
 // get total income for a specific month and year
-const getTotalIncomeByMonth = async (req, res) => {
+export const getTotalIncomeByMonth = async (req, res) => {
     try {
         const userId = req.userId; // from auth middleware
+        if (!userId) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
         const { month, year } = req.query;
         const range = getMonthRange(month, year);
         if (!range) {
@@ -164,7 +169,7 @@ const getTotalIncomeByMonth = async (req, res) => {
             });
         }
         const { startDate, endDate } = range;
-        const totalIncome = await incomeModel_1.default.aggregate([
+        const totalIncome = await incomeModel.aggregate([
             {
                 $match: {
                     userId,
@@ -182,7 +187,6 @@ const getTotalIncomeByMonth = async (req, res) => {
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "Unable to get total income";
-        res.status(400).json({ status: "error", message, error });
+        res.status(400).json({ status: "error", message });
     }
 };
-exports.getTotalIncomeByMonth = getTotalIncomeByMonth;

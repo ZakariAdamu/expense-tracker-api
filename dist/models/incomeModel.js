@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = require("mongoose");
-const incomeSchema = new mongoose_1.Schema({
+import { Schema, model } from "mongoose";
+const incomeSchema = new Schema({
     description: {
         type: String,
         required: true,
@@ -23,7 +21,7 @@ const incomeSchema = new mongoose_1.Schema({
         default: Date.now,
     },
     userId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "user",
         required: true, // income for a particular user
     },
@@ -37,5 +35,5 @@ const incomeSchema = new mongoose_1.Schema({
     timestamps: true,
     versionKey: false,
 });
-const incomeModel = mongoose_1.models.Income || (0, mongoose_1.model)("Income", incomeSchema);
-exports.default = incomeModel;
+const incomeModel = model("Income", incomeSchema);
+export default incomeModel;
