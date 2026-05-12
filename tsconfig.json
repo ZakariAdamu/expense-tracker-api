@@ -12,11 +12,8 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "rewriteRelativeImportExtensions": true,
-    "allowImportingTsExtensions": true
-  },
-  "types": {
-    "node": true,
-    "express": true
+    "allowImportingTsExtensions": true,
+    "types": ["node", "express"]
   },
   "ts-node": {
     "esm": true,
