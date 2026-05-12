@@ -8,7 +8,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies.token; // because we use httpOnly cookie
 
     if (!token) {
-      return res.status(401).json({ message: "You need to login first" });
+      return res.status(401).json({ message: "You need to login first!" });
     }
 
     if (!jwtSecret) {
