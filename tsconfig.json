@@ -12,18 +12,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "rewriteRelativeImportExtensions": true,
-    "allowImportingTsExtensions": true,
-    "types": [
-      "node",
-      "express",
-      "cors",
-      "dotenv",
-      "jsonwebtoken",
-      "bcrypt",
-      "cookie-parser",
-      "compression",
-      "helmet"
-    ]
+    "allowImportingTsExtensions": true
   },
   "ts-node": {
     "esm": true,
