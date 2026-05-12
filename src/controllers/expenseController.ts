@@ -111,7 +111,9 @@ export const exportExpensesAsCSV = async (req: Request, res: Response) => {
         new Date(expense.date).toISOString(),
       ]),
     ]
-      .map((row) => row.join(","))
+      .map((row) =>
+        row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(","),
+      )
       .join("\n");
 
     res.setHeader("Content-Type", "text/csv");
