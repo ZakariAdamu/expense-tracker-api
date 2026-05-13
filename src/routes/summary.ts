@@ -4,9 +4,17 @@ import { portfolioSummary, recentTransactions } from "../lib/finance-data.ts";
 
 export const summaryRouter = Router();
 
-summaryRouter.get("/", (_request: Request, response: Response) => {
+summaryRouter.get("/portfolio", (_request: Request, response: Response) => {
   response.json({
     summary: portfolioSummary,
-    recentTransactions,
   });
 });
+
+summaryRouter.get(
+  "/recent-transactions",
+  (_request: Request, response: Response) => {
+    response.json({
+      recentTransactions,
+    });
+  },
+);
