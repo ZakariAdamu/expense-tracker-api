@@ -7,11 +7,11 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "kill-port": "is-ci || kill-port 4000",
+    "kill-port": "node scripts/kill-port-if-not-ci.cjs",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
-    "prepare": "is-ci || husky"
+    "prepare": "node scripts/prepare-husky.cjs"
   },
   "lint-staged": {
     "*.ts": [
@@ -54,7 +54,6 @@
     "@types/node": "^20.14.12",
     "eslint": "^9.10.0",
     "husky": "^9.1.7",
-    "is-ci": "^4.1.0",
     "kill-port": "^2.0.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.3.3",
