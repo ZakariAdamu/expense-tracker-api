@@ -7,11 +7,11 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "kill-port": "node -e \"if(!process.env.CI){require('child_process').execSync('kill-port 4000',{stdio:'inherit'})}\"",
+    "kill-port": "node scripts/kill-port-if-not-ci.cjs",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
-    "prepare": "node -e \"try{require('husky').install()}catch(e){process.exit(0)}\""
+    "prepare": "node scripts/prepare-husky.cjs"
   },
   "lint-staged": {
     "*.ts": [
