@@ -2,52 +2,53 @@ import type { Types } from "mongoose";
 import { Schema, model } from "mongoose";
 
 export interface IIncome {
-  description: string;
-  amount: number;
-  category: string;
-  date: Date;
-  userId?: Types.ObjectId;
-  type: "income";
+	description: string;
+	amount: number;
+	category: string;
+	date: Date;
+	userId?: Types.ObjectId;
+	type: "income";
 }
 
 const incomeSchema = new Schema<IIncome>(
-  {
-    description: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    category: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    date: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "user",
-      required: true, // income for a particular user
-    },
-    type: {
-      type: String,
-      enum: ["income"],
-      default: "income",
-      required: true,
-    },
-  },
-  {
-    timestamps: true,
-    versionKey: false,
-  },
+	{
+		description: {
+			type: String,
+			required: true,
+			trim: true,
+		},
+		amount: {
+			type: Number,
+			required: true,
+			min: 0,
+		},
+		category: {
+			type: String,
+			required: true,
+			trim: true,
+		},
+		date: {
+			type: Date,
+			required: true,
+			default: Date.now,
+		},
+		userId: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+			required: true, // income for a particular user
+			index: true,
+		},
+		type: {
+			type: String,
+			enum: ["income"],
+			default: "income",
+			required: true,
+		},
+	},
+	{
+		timestamps: true,
+		versionKey: false,
+	},
 );
 
 const incomeModel = model<IIncome>("Income", incomeSchema);

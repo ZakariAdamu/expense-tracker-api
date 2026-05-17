@@ -1,11 +1,12 @@
 import express from "express";
 import {
-  signupUser,
-  loginUser,
-  logoutUser,
-  getCurrentUser,
-  updateProfile,
-  changePassword,
+	signupUser,
+	loginUser,
+	logoutUser,
+	getCurrentUser,
+	updateProfile,
+	changePassword,
+	refreshAuthTokens,
 } from "../controllers/userController.ts";
 import { protect } from "../middleware/auth.ts";
 
@@ -13,6 +14,7 @@ const userRouter = express.Router();
 
 userRouter.post("/signup", signupUser);
 userRouter.post("/login", loginUser);
+userRouter.post("/refresh", refreshAuthTokens);
 userRouter.post("/logout", logoutUser);
 
 // Protected routes (need login to access)

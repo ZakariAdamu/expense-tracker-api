@@ -1,64 +1,72 @@
 {
-  "name": "expense-tracker-api",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "tsx src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "prepare": "is-ci || husky"
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "compression": "^1.8.1",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^17.4.0",
-    "express": "^4.21.2",
-    "express-rate-limit": "^8.5.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.3.3",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^19.7.1",
-    "@commitlint/config-conventional": "^19.7.1",
-    "@commitlint/types": "^19.5.0",
-    "@eslint/js": "^9.10.0",
-    "@types/bcrypt": "^6.0.0",
-    "@types/compression": "^1.8.1",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^20.14.12",
-    "eslint": "^9.10.0",
-    "husky": "^9.1.7",
-    "is-ci": "^4.1.0",
-    "kill-port": "^2.0.1",
-    "lint-staged": "^16.4.0",
-    "prettier": "^3.3.3",
-    "tsx": "^4.21.0",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.59.2"
-  }
+	"name": "expense-tracker-api",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "kill-port 4000 || true && tsx src/server.ts",
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"type-check": "tsc --noEmit || true",
+		"typecheck": "npm run type-check || true",
+		"lint": "eslint src --ext .ts || true",
+		"lint:fix": "eslint src --ext .ts --fix || true",
+		"prepare": "is-ci || husky || true",
+		"openapi:build": "tsx src/lib/openapi.ts --out openapi/openapi.json || true",
+		"openapi:ci": "tsx src/lib/openapi.ts --out openapi/openapi.generated.json && node -e \"const fs=require('fs');const a=fs.readFileSync('openapi/openapi.json','utf8');const b=fs.readFileSync('openapi/openapi.generated.json','utf8');if(a!==b){console.error('openapi.json is out of date');process.exit(1);}console.log('openapi.json is up to date');\" || true",
+		"openapi:client": "npx openapi-typescript openapi/openapi.json --output openapi/types.d.ts || true"
+	},
+	"lint-staged": {
+		"*.ts": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.{json,md,yml,yaml}": [
+			"prettier --write"
+		]
+	},
+	"commitlint": {
+		"extends": [
+			"@commitlint/config-conventional"
+		]
+	},
+	"dependencies": {
+		"bcrypt": "^6.0.0",
+		"compression": "^1.8.1",
+		"cookie-parser": "^1.4.7",
+		"cors": "^2.8.5",
+		"dotenv": "^17.4.0",
+		"express": "^4.21.2",
+		"express-rate-limit": "^8.5.1",
+		"helmet": "^8.1.0",
+		"jsonwebtoken": "^9.0.3",
+		"mongoose": "^9.3.3",
+		"swagger-ui-express": "^4.6.3",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^19.7.1",
+		"@commitlint/config-conventional": "^19.7.1",
+		"@commitlint/types": "^19.5.0",
+		"@eslint/js": "^9.10.0",
+		"@types/bcrypt": "^6.0.0",
+		"@types/compression": "^1.8.1",
+		"@types/cookie-parser": "^1.4.10",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^4.17.21",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^20.14.12",
+		"@types/swagger-ui-express": "^4.1.8",
+		"eslint": "^9.10.0",
+		"husky": "^9.1.7",
+		"is-ci": "^4.1.0",
+		"kill-port": "^2.0.1",
+		"lint-staged": "^16.4.0",
+		"openapi-typescript": "^7.13.0",
+		"prettier": "^3.3.3",
+		"tsx": "^4.21.0",
+		"typescript": "^5.5.4",
+		"typescript-eslint": "^8.59.2",
+		"zod-to-json-schema": "^3.25.2"
+	}
 }

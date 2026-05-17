@@ -1,13 +1,21 @@
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 import express, {
-  type NextFunction,
-  type Request,
-  type Response,
+	type NextFunction,
+	type Request,
+	type Response,
 } from "express";
-import helmet from "helmet"; // ← Add this
-import compression from "compression"; // ← Add this (optional but recommended)
+import helmet from "helmet";
+import jwt from "jsonwebtoken";
+import { ZodError } from "zod";
+import { env } from "./config/env.js";
+import { isHttpError } from "./lib/http-error.js";
+import { sendError, sendSuccess } from "./lib/response.js";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
+import path from "path";
 
 // Import your routes
 import { healthRouter } from "./routes/health.ts";
@@ -18,98 +26,133 @@ import dashboardRouter from "./routes/dashboardRoute.ts";
 import userRouter from "./routes/userRoute.ts";
 
 export function createApp() {
-  const app = express();
+	const app = express();
+	app.disable("x-powered-by");
+	app.set("trust proxy", 1);
 
-  // ====================== MIDDLEWARE ======================
+	// ====================== MIDDLEWARE ======================
 
-  // 1. Security headers (Very Important)
-  app.use(helmet());
+	// 1. Security headers (Very Important)
+	app.use(helmet());
 
-  // 2. CORS (Configure allowed origins based on environment)
-  // Determine which origin to allow
-  const getAllowedOrigins = () => {
-    const devUrl = process.env.FRONTEND_DEV_URL;
-    const prodUrl = process.env.FRONTEND_PROD_URL;
+	const corsOrigin =
+		env.allowedOrigins.length > 0
+			? env.allowedOrigins
+			: env.nodeEnv === "production"
+				? false
+				: true;
 
-    if (process.env.NODE_ENV === "production") {
-      return prodUrl ? [prodUrl] : [];
-    }
+	const corsOptions: cors.CorsOptions = {
+		origin: corsOrigin,
+		credentials: true,
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-Refresh-Token"],
+	};
 
-    // In development, allow both localhost frontend + production (for testing)
-    return [devUrl, prodUrl].filter(Boolean) as string[];
-  };
+	app.use(cors(corsOptions));
 
-  app.use(
-    cors({
-      origin: getAllowedOrigins(),
-      credentials: true, // ← Important for cookies (JWT)
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    }),
-  );
+	// 2. Add the global preflight interceptor (CRITICAL for Render + Next.js)
+	app.options("*", cors(corsOptions));
 
-  // 3. Compression (speeds up responses)
-  app.use(compression());
+	// 3. Compression (speeds up responses)
+	app.use(compression());
 
-  // 4. Body parsing
-  app.use(express.json({ limit: "10mb" })); // Prevent huge payloads
-  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+	// 4. Body parsing
+	app.use(express.json({ limit: "10mb" })); // Prevent huge payloads
+	app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-  // 5. Cookie parser
-  app.use(cookieParser());
+	// 5. Cookie parser
+	app.use(cookieParser());
 
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 15, // limit each IP
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-  app.use("/api/users/login", limiter);
-  app.use("/api/users/signup", limiter);
+	const limiter = rateLimit({
+		windowMs: 15 * 60 * 1000, // 15 minutes
+		max: 15,
+		standardHeaders: true,
+		legacyHeaders: false,
+		message: {
+			status: "error",
+			message: "Too many auth attempts, please try again later.",
+		},
+	});
+	app.use("/api/users/login", limiter);
+	app.use("/api/users/signup", limiter);
+	app.use("/api/users/refresh", limiter);
 
-  // ====================== BASIC ROUTE ======================
-  app.get("/", (_req: Request, res: Response) => {
-    res.json({
-      service: "finance-pro-backend",
-      status: "running",
-      version: process.env.npm_package_version || "1.0.0",
-      message: "Backend is healthy",
-    });
-  });
+	// ====================== BASIC ROUTE ======================
+	app.get("/", (_req: Request, res: Response) => {
+		sendSuccess(res, 200, "Backend is healthy", {
+			service: "finance-pro-backend",
+			version: process.env.npm_package_version || "1.0.0",
+			status: "running",
+		});
+	});
 
-  // ====================== ROUTES ======================
-  app.use("/api/health", healthRouter); // Better to mount with prefix
-  app.use("/api/users", userRouter);
-  app.use("/api/summary", summaryRouter);
-  app.use("/api/incomes", incomeRouter);
-  app.use("/api/expenses", expenseRouter);
-  app.use("/api/dashboard", dashboardRouter);
+	// ====================== ROUTES ======================
+	app.use("/api/health", healthRouter);
+	app.use("/api/users", userRouter);
+	app.use("/api/summary", summaryRouter);
+	app.use("/api/income", incomeRouter);
+	app.use("/api/expenses", expenseRouter);
+	app.use("/api/dashboard", dashboardRouter);
 
-  // Optional: Keep /dashboard if you serve some HTML/views
-  app.use("/dashboard", dashboardRouter);
+	// Optional: Keep /dashboard if you serve some HTML/views
+	app.use("/dashboard", dashboardRouter);
 
-  // ====================== 404 HANDLER ======================
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: "Route not found" });
-  });
+	// ====================== API Docs (Swagger UI) ======================
+	try {
+		const openapiPath = path.resolve(process.cwd(), "openapi", "openapi.json");
+		if (fs.existsSync(openapiPath)) {
+			const spec = JSON.parse(fs.readFileSync(openapiPath, "utf-8"));
+			app.use(
+				"/docs",
+				swaggerUi.serve,
+				swaggerUi.setup(spec, { explorer: true }),
+			);
+		}
+	} catch (err) {
+		console.warn("Could not mount API docs:", err);
+	}
 
-  // ====================== GLOBAL ERROR HANDLER ======================
-  app.use(
-    (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-      console.error("Unhandled Error:", error); // Log for debugging
+	// ====================== 404 HANDLER ======================
+	app.use((_req: Request, res: Response) => {
+		sendError(res, 404, "Route not found");
+	});
 
-      const message =
-        error instanceof Error ? error.message : "Internal server error";
+	// ====================== GLOBAL ERROR HANDLER ======================
+	app.use(
+		(error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+			if (res.headersSent) {
+				return;
+			}
 
-      res.status(500).json({
-        error: message,
-        // Only show stack in development
-        ...(process.env.NODE_ENV === "development" && {
-          stack: error instanceof Error ? error.stack : undefined,
-        }),
-      });
-    },
-  );
+			if (isHttpError(error)) {
+				return sendError(res, error.statusCode, error.message, error.details);
+			}
 
-  return app;
+			if (error instanceof ZodError) {
+				return sendError(res, 400, "Validation failed", {
+					issues: error.flatten(),
+				});
+			}
+
+			if (error instanceof jwt.TokenExpiredError) {
+				return sendError(res, 401, "Token has expired");
+			}
+
+			if (error instanceof jwt.JsonWebTokenError) {
+				return sendError(res, 401, "Invalid token");
+			}
+
+			console.error("Unhandled Error:", error);
+			return sendError(res, 500, "Internal server error", {
+				...(env.nodeEnv === "development" &&
+				error instanceof Error &&
+				error.stack
+					? { stack: error.stack }
+					: {}),
+			});
+		},
+	);
+
+	return app;
 }
