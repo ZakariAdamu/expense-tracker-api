@@ -36,12 +36,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name",
-                  "email",
-                  "password",
-                  "confirmPassword"
-                ]
+                "required": ["name", "email", "password", "confirmPassword"]
               }
             }
           }
@@ -77,10 +72,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "email",
-                  "password"
-                ]
+                "required": ["email", "password"]
               }
             }
           }
@@ -132,7 +124,7 @@
         ]
       }
     },
-    "/api/incomes": {
+    "/api/income": {
       "get": {
         "summary": "List incomes",
         "parameters": [
@@ -214,11 +206,7 @@
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "description",
-                  "amount",
-                  "category"
-                ]
+                "required": ["description", "amount", "category"]
               }
             }
           }
@@ -281,11 +269,7 @@
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "description",
-                  "amount",
-                  "category"
-                ]
+                "required": ["description", "amount", "category"]
               }
             }
           }
