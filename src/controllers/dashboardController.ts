@@ -1,5 +1,6 @@
-import type { Request, Response } from "express";
 import mongoose from "mongoose";
+import type { Request, Response } from "express";
+import { sendError, sendSuccess } from "../lib/response.js";
 import incomeModel from "../models/incomeModel.ts";
 import expenseModel from "../models/expenseModel.ts";
 
@@ -8,129 +9,135 @@ type MonthlyAggregate = { _id: { month: number; year: number }; total: number };
 type SpendingByCategory = { _id: string; total: number };
 
 export const getDashboardData = async (req: Request, res: Response) => {
-  if (!req.userId) {
-    return res.status(401).json({ status: "error", message: "Unauthorized" });
-  }
-  const userId = new mongoose.Types.ObjectId(req.userId);
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	if (!req.userId) {
+		return sendError(res, 401, "Unauthorized");
+	}
 
-  try {
-    const totalIncome = await incomeModel.aggregate<AggregateTotal>([
-      {
-        $match: {
-          userId,
-          date: { $gte: startOfMonth, $lte: now },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
+	if (!mongoose.isValidObjectId(req.userId)) {
+		return sendError(res, 400, "Invalid user id");
+	}
 
-    const totalExpense = await expenseModel.aggregate<AggregateTotal>([
-      {
-        $match: {
-          userId,
-          date: { $gte: startOfMonth, $lte: now },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
+	const userId = new mongoose.Types.ObjectId(req.userId);
+	const now = new Date();
+	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const monthlyIncome = await incomeModel.aggregate<MonthlyAggregate>([
-      { $match: { userId } },
-      {
-        $group: {
-          _id: { month: { $month: "$date" }, year: { $year: "$date" } },
-          total: { $sum: "$amount" },
-        },
-      },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ]);
+	try {
+		const totalIncome = await incomeModel.aggregate<AggregateTotal>([
+			{
+				$match: {
+					userId,
+					date: { $gte: startOfMonth, $lte: now },
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+				},
+			},
+		]);
 
-    const monthlyExpense = await expenseModel.aggregate<MonthlyAggregate>([
-      { $match: { userId } },
-      {
-        $group: {
-          _id: { month: { $month: "$date" }, year: { $year: "$date" } },
-          total: { $sum: "$amount" },
-        },
-      },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ]);
+		const totalExpense = await expenseModel.aggregate<AggregateTotal>([
+			{
+				$match: {
+					userId,
+					date: { $gte: startOfMonth, $lte: now },
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+				},
+			},
+		]);
 
-    const totalIncomeValue = totalIncome[0]?.total || 0;
-    const totalExpenseValue = totalExpense[0]?.total || 0;
+		const monthlyIncome = await incomeModel.aggregate<MonthlyAggregate>([
+			{ $match: { userId } },
+			{
+				$group: {
+					_id: { month: { $month: "$date" }, year: { $year: "$date" } },
+					total: { $sum: "$amount" },
+				},
+			},
+			{ $sort: { "_id.year": 1, "_id.month": 1 } },
+		]);
 
-    const savings = totalIncomeValue - totalExpenseValue;
-    const savingsRate = totalIncomeValue
-      ? (savings / totalIncomeValue) * 100
-      : 0;
+		const monthlyExpense = await expenseModel.aggregate<MonthlyAggregate>([
+			{ $match: { userId } },
+			{
+				$group: {
+					_id: { month: { $month: "$date" }, year: { $year: "$date" } },
+					total: { $sum: "$amount" },
+				},
+			},
+			{ $sort: { "_id.year": 1, "_id.month": 1 } },
+		]);
 
-    const recentTransactions = await Promise.all([
-      incomeModel.find({ userId }).sort({ date: -1 }).limit(5),
-      expenseModel.find({ userId }).sort({ date: -1 }).limit(5),
-    ]).then(([incomes, expenses]) => {
-      const transactions = [
-        ...incomes.map((income) => ({
-          ...income.toObject(),
-          type: "income" as const,
-        })),
-        ...expenses.map((expense) => ({
-          ...expense.toObject(),
-          type: "expense" as const,
-        })),
-      ];
-      return transactions
-        .sort((a, b) => b.date.getTime() - a.date.getTime())
-        .slice(0, 5);
-    });
+		const totalIncomeValue = totalIncome[0]?.total || 0;
+		const totalExpenseValue = totalExpense[0]?.total || 0;
 
-    const spendingByCategory = await expenseModel.aggregate<SpendingByCategory>(
-      [
-        { $match: { userId } },
-        {
-          $group: {
-            _id: "$category",
-            total: { $sum: "$amount" },
-          },
-        },
-        { $sort: { total: -1 } },
-      ],
-    );
+		const savings = totalIncomeValue - totalExpenseValue;
+		const savingsRate = totalIncomeValue
+			? (savings / totalIncomeValue) * 100
+			: 0;
 
-    // for chart visualization
-    const expenseDistribution = spendingByCategory.map((item) => ({
-      category: item._id,
-      total: item.total,
-      percentage: totalExpense[0]?.total
-        ? (item.total / totalExpense[0].total) * 100
-        : 0,
-    }));
+		const [incomeDocs, expenseDocs] = await Promise.all([
+			incomeModel.find({ userId }).sort({ date: -1 }).limit(5),
+			expenseModel.find({ userId }).sort({ date: -1 }).limit(5),
+		]);
 
-    res.status(200).json({
-      totalIncome: totalIncomeValue,
-      totalExpense: totalExpenseValue,
-      savings,
-      savingsRate,
-      recentTransactions,
-      monthlyIncome,
-      monthlyExpense,
-      spendingByCategory,
-      expenseDistribution,
-    });
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Unable to load dashboard";
-    res.status(400).json({ message, error: message });
-  }
+		const recentTransactions = [
+			...incomeDocs.map((income) => ({
+				...income.toObject(),
+				type: "income" as const,
+			})),
+			...expenseDocs.map((expense) => ({
+				...expense.toObject(),
+				type: "expense" as const,
+			})),
+		]
+			.sort((a, b) => b.date.getTime() - a.date.getTime())
+			.slice(0, 5);
+
+		const spendingByCategory = await expenseModel.aggregate<SpendingByCategory>(
+			[
+				{ $match: { userId } },
+				{
+					$group: {
+						_id: "$category",
+						total: { $sum: "$amount" },
+					},
+				},
+				{ $sort: { total: -1 } },
+			],
+		);
+
+		// for chart visualization
+		const expenseDistribution = spendingByCategory.map((item) => ({
+			category: item._id,
+			total: item.total,
+			percentage: totalExpense[0]?.total
+				? (item.total / totalExpense[0].total) * 100
+				: 0,
+		}));
+
+		return sendSuccess(res, 200, "Dashboard data loaded successfully", {
+			totalIncome: totalIncomeValue,
+			totalExpense: totalExpenseValue,
+			savings,
+			savingsRate,
+			recentTransactions,
+			monthlyIncome,
+			monthlyExpense,
+			spendingByCategory,
+			expenseDistribution,
+		});
+	} catch (error: unknown) {
+		return sendError(
+			res,
+			400,
+			error instanceof Error ? error.message : "Unable to load dashboard",
+		);
+	}
 };

@@ -1,0 +1,68 @@
+name: Publish API Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build OpenAPI spec
+        run: npm run openapi:build
+
+      - name: Prepare docs site
+        run: |
+          mkdir -p docs
+          cp openapi/openapi.json docs/openapi.json
+          cat > docs/index.html <<'HTML'
+          <!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Expense Tracker API</title>
+            <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+          </head>
+          <body>
+            <div id="swagger-ui"></div>
+            <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+            <script>
+              window.onload = function() {
+                SwaggerUIBundle({
+                  url: './openapi.json',
+                  dom_id: '#swagger-ui'
+                });
+              };
+            </script>
+          </body>
+          </html>
+          HTML
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./docs
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1

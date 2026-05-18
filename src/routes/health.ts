@@ -1,18 +1,18 @@
 import { Router, type Request, type Response } from "express";
 import { getMongoStatus } from "../db/mongo.ts";
+import { sendSuccess } from "../lib/response.js";
 
 export const healthRouter = Router();
 
 healthRouter.get("/", (_request: Request, response: Response) => {
-  const mongo = getMongoStatus();
+	const mongo = getMongoStatus();
 
-  response.json({
-    status: "ok",
-    service: "finance-pro-backend",
-    timestamp: new Date().toISOString(),
-    database: {
-      provider: "mongodb",
-      ...mongo,
-    },
-  });
+	return sendSuccess(response, 200, "Service is healthy", {
+		service: "finance-pro-backend",
+		timestamp: new Date().toISOString(),
+		database: {
+			provider: "mongodb",
+			...mongo,
+		},
+	});
 });
