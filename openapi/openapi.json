@@ -150,6 +150,14 @@
             }
           },
           {
+            "name": "range",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["daily", "weekly", "monthly", "yearly"]
+            }
+          },
+          {
             "name": "startDate",
             "in": "query",
             "schema": {
