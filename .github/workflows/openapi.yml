@@ -18,4 +18,7 @@ jobs:
       - name: Install deps
         run: npm ci
       - name: Run OpenAPI CI check
+        env:
+          MONGODBURI: dummy-mongodb-uri
+          JWT_SECRET: dummy-secret
         run: npm run openapi:ci
