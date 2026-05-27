@@ -181,13 +181,23 @@ export const getAllIncomes = async (req: Request, res: Response) => {
           : {}),
       };
     }
-
     const startDate = parseDate(req.query.startDate);
     const endDate = parseDate(req.query.endDate);
-
+    if (req.query.startDate !== undefined && !startDate) {
+      return sendError(res, 400, "Invalid startDate format");
+    }
+    if (req.query.endDate !== undefined && !endDate) {
+      return sendError(res, 400, "Invalid endDate format");
+    }
+    if (range && (startDate || endDate)) {
+      return sendError(
+        res,
+        400,
+        "Cannot provide both range and startDate/endDate",
+      );
+    }
     if (startDate || endDate) {
       match.date = {
-        ...(match.date && typeof match.date === "object" ? match.date : {}),
         ...(startDate ? { $gte: startDate } : {}),
         ...(endDate ? { $lte: endDate } : {}),
       };

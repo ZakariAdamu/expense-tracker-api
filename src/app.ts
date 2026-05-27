@@ -64,9 +64,9 @@ export function createApp() {
   // 5. Cookie parser
   app.use(cookieParser());
 
-  const limiter = rateLimit({
+  const authLimiter = rateLimit({
     windowMs: 45 * 60 * 1000, // 45 minutes
-    max: 15,
+    max: 15, // Limit each IP to 15 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -74,9 +74,21 @@ export function createApp() {
       message: "Too many auth attempts, please try again later.",
     },
   });
-  app.use("/api/users/login", limiter);
-  app.use("/api/users/signup", limiter);
-  app.use("/api/users/refresh", limiter);
+
+  const refreshLimiter = rateLimit({
+    windowMs: 45 * 60 * 1000,
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      status: "error",
+      message: "Too many refresh attempts, please try again later.",
+    },
+  });
+
+  app.use("/api/users/login", authLimiter);
+  app.use("/api/users/signup", authLimiter);
+  app.use("/api/users/refresh", refreshLimiter);
 
   // ====================== BASIC ROUTE ======================
   app.get("/", (_req: Request, res: Response) => {

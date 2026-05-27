@@ -13,6 +13,8 @@ export const expenseSchema = z.object({
 
 export const expenseUpdateSchema = expenseSchema.partial();
 
+type ExpenseRange = "daily" | "weekly" | "monthly" | "yearly";
+
 function parsePagination(query: Request["query"]) {
   // If neither page nor limit provided, treat pagination as disabled
   if (query.page === undefined && query.limit === undefined) return null;
@@ -29,6 +31,59 @@ function parseDate(value: unknown) {
 
   const date = new Date(String(value));
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseRange(value: unknown): ExpenseRange | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "daily" ||
+    normalized === "weekly" ||
+    normalized === "monthly" ||
+    normalized === "yearly"
+  ) {
+    return normalized;
+  }
+
+  return null;
+}
+
+function getRangeWindow(range: ExpenseRange) {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  switch (range) {
+    case "daily":
+      return { startDate: start, endDate: end };
+    case "weekly": {
+      const dayOfWeek = start.getDay();
+      const daysFromMonday = (dayOfWeek + 6) % 7;
+      start.setDate(start.getDate() - daysFromMonday);
+      end.setTime(start.getTime());
+      end.setDate(end.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+    case "monthly": {
+      start.setDate(1);
+      end.setMonth(end.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+    case "yearly": {
+      start.setMonth(0, 1);
+      end.setMonth(11, 31);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+  }
 }
 
 function csvCell(value: unknown) {
@@ -76,14 +131,44 @@ export const getAllExpenses = async (req: Request, res: Response) => {
   try {
     const pagination = parsePagination(req.query);
     const match: Record<string, unknown> = { userId: req.userId };
+    const range = parseRange(req.query.range);
+
+    if (req.query.range !== undefined && !range) {
+      return sendError(
+        res,
+        400,
+        'range must be one of "daily", "weekly", "monthly", or "yearly"',
+      );
+    }
 
     if (typeof req.query.category === "string" && req.query.category.trim()) {
       match.category = req.query.category.trim();
     }
 
+    if (range) {
+      const rangeWindow = getRangeWindow(range);
+      match.date = {
+        ...(rangeWindow
+          ? { $gte: rangeWindow.startDate, $lte: rangeWindow.endDate }
+          : {}),
+      };
+    }
+
     const startDate = parseDate(req.query.startDate);
     const endDate = parseDate(req.query.endDate);
-
+    if (req.query.startDate !== undefined && !startDate) {
+      return sendError(res, 400, "Invalid startDate format");
+    }
+    if (req.query.endDate !== undefined && !endDate) {
+      return sendError(res, 400, "Invalid endDate format");
+    }
+    if (range && (startDate || endDate)) {
+      return sendError(
+        res,
+        400,
+        "Cannot provide both range and startDate/endDate",
+      );
+    }
     if (startDate || endDate) {
       match.date = {
         ...(startDate ? { $gte: startDate } : {}),
