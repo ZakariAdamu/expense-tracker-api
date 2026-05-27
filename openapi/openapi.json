@@ -308,15 +308,30 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "200": { "description": "Income object" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" }
+          "200": {
+            "description": "Income object"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "Update an income by ID",
@@ -325,7 +340,9 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -335,22 +352,46 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "description": { "type": "string" },
-                  "amount": { "type": "number" },
-                  "category": { "type": "string" },
-                  "date": { "type": "string", "format": "date-time" }
+                  "description": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Updated" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" },
-          "422": { "description": "Validation failed" }
+          "200": {
+            "description": "Updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation failed"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "Delete an income by ID",
@@ -359,15 +400,30 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "204": { "description": "Deleted" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" }
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/expenses/{id}": {
@@ -378,15 +434,30 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "200": { "description": "Expense object" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" }
+          "200": {
+            "description": "Expense object"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "put": {
         "summary": "Update an expense by ID",
@@ -395,7 +466,9 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -405,22 +478,46 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "description": { "type": "string" },
-                  "amount": { "type": "number" },
-                  "category": { "type": "string" },
-                  "date": { "type": "string", "format": "date-time" }
+                  "description": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Updated" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" },
-          "422": { "description": "Validation failed" }
+          "200": {
+            "description": "Updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation failed"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "delete": {
         "summary": "Delete an expense by ID",
@@ -429,15 +526,30 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "204": { "description": "Deleted" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not found" }
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
         },
-        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }]
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/dashboard": {
