@@ -21,6 +21,9 @@ jobs:
         run: npm ci
 
       - name: Build OpenAPI spec
+        env:
+          MONGODBURI: dummy-mongodb-uri
+          JWT_SECRET: dummy-secret
         run: npm run openapi:build
 
       - name: Prepare docs site
