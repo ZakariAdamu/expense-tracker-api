@@ -12,7 +12,7 @@ const envSchema = z.object({
   MOGODBURI: z.string().optional(),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   JWT_REFRESH_SECRET: z.string().min(1).optional(),
-  JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
+  JWT_ACCESS_EXPIRES_IN: z.string().default("60m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   MONGO_RETRIES: z.coerce.number().int().min(0).default(3),
   MONGO_RETRY_DELAY_MS: z.coerce.number().int().min(0).default(2000),
