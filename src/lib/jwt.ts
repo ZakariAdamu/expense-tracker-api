@@ -3,8 +3,8 @@ import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 import { env } from "../config/env.js";
 
 export type AuthTokenPayload = JwtPayload & {
-	sub: string;
-	tokenType: "access" | "refresh";
+  sub: string;
+  tokenType: "access" | "refresh";
 };
 
 // Cookie names for authentication tokens
@@ -15,121 +15,119 @@ export const LEGACY_TOKEN_COOKIE = "token";
 // ============= TOKEN CREATION & VERIFICATION =============
 const JWT_ALGORITHM = "HS256" as const;
 
-
 // Helper function to sign a JWT with the appropriate payload and options
 function signToken(
-	userId: string,
-	secret: string,
-	expiresIn: string,
-	tokenType: AuthTokenPayload["tokenType"],
+  userId: string,
+  secret: string,
+  expiresIn: string,
+  tokenType: AuthTokenPayload["tokenType"],
 ) {
-	return jwt.sign({ sub: userId, tokenType }, secret, {
-		expiresIn: expiresIn as SignOptions["expiresIn"],
-		algorithm: JWT_ALGORITHM,
-	});
+  return jwt.sign({ sub: userId, tokenType }, secret, {
+    expiresIn: expiresIn as SignOptions["expiresIn"],
+    algorithm: JWT_ALGORITHM,
+  });
 }
 
 // Creates an access token for the given user ID
 export function createAccessToken(userId: string) {
-	return signToken(userId, env.jwtSecret, env.jwtAccessExpiresIn, "access");
+  return signToken(userId, env.jwtSecret, env.jwtAccessExpiresIn, "access");
 }
 
 // Creates a refresh token for the given user ID during the sign-in process
 export function createRefreshToken(userId: string) {
-	return signToken(
-		userId,
-		env.jwtRefreshSecret,
-		env.jwtRefreshExpiresIn,
-		"refresh",
-	);
+  return signToken(
+    userId,
+    env.jwtRefreshSecret,
+    env.jwtRefreshExpiresIn,
+    "refresh",
+  );
 }
 
 export function getAuthCookieOptions(maxAgeMs: number) {
-	return {
-		httpOnly: true,
-		secure: env.nodeEnv === "production",
-		sameSite: "lax" as const,
-		path: "/",
-		maxAge: maxAgeMs,
-		...(env.cookieDomain ? { domain: env.cookieDomain } : {}),
-	};
+  return {
+    httpOnly: true,
+    secure: env.nodeEnv === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: maxAgeMs,
+    ...(env.cookieDomain ? { domain: env.cookieDomain } : {}),
+  };
 }
 
 export function getAccessTokenCookieOptions() {
-	return getAuthCookieOptions(15 * 60 * 1000); // 15 minutes
+  return getAuthCookieOptions(60 * 60 * 1000); // 1 hour
 }
 
 export function getRefreshTokenCookieOptions() {
-	return getAuthCookieOptions(7 * 24 * 60 * 60 * 1000); // 7 days
+  return getAuthCookieOptions(7 * 24 * 60 * 60 * 1000); // 7 days
 }
 // Sets the access and refresh tokens as HTTP-only cookies in the response
 export function setAuthCookies(
-	res: {
-		cookie: (name: string, value: string, options: CookieOptions) => unknown;
-	},
-	accessToken: string,
-	refreshToken: string,
+  res: {
+    cookie: (name: string, value: string, options: CookieOptions) => unknown;
+  },
+  accessToken: string,
+  refreshToken: string,
 ) {
-	res.cookie(ACCESS_TOKEN_COOKIE, accessToken, getAccessTokenCookieOptions());
-	res.cookie(
-		REFRESH_TOKEN_COOKIE,
-		refreshToken,
-		getRefreshTokenCookieOptions(),
-	);
-	res.cookie(LEGACY_TOKEN_COOKIE, accessToken, getAccessTokenCookieOptions());
+  res.cookie(ACCESS_TOKEN_COOKIE, accessToken, getAccessTokenCookieOptions());
+  res.cookie(
+    REFRESH_TOKEN_COOKIE,
+    refreshToken,
+    getRefreshTokenCookieOptions(),
+  );
+  res.cookie(LEGACY_TOKEN_COOKIE, accessToken, getAccessTokenCookieOptions());
 }
 
-
 export function clearAuthCookies(res: {
-	clearCookie: (name: string, options?: CookieOptions) => unknown;
+  clearCookie: (name: string, options?: CookieOptions) => unknown;
 }) {
-	const options = getRefreshTokenCookieOptions();
-	res.clearCookie(ACCESS_TOKEN_COOKIE, options);
-	res.clearCookie(REFRESH_TOKEN_COOKIE, options);
-	res.clearCookie(LEGACY_TOKEN_COOKIE, options);
+  const options = getRefreshTokenCookieOptions();
+  res.clearCookie(ACCESS_TOKEN_COOKIE, options);
+  res.clearCookie(REFRESH_TOKEN_COOKIE, options);
+  res.clearCookie(LEGACY_TOKEN_COOKIE, options);
 }
 
 export function verifyToken(
-	token: string,
-	type: AuthTokenPayload["tokenType"],
+  token: string,
+  type: AuthTokenPayload["tokenType"],
 ) {
-	const secret = type === "access" ? env.jwtSecret : env.jwtRefreshSecret;
-	const payload = jwt.verify(token, secret, {
-		algorithms: [JWT_ALGORITHM] as jwt.Algorithm[],
-	}) as jwt.JwtPayload & Partial<AuthTokenPayload>;
+  const secret = type === "access" ? env.jwtSecret : env.jwtRefreshSecret;
+  const payload = jwt.verify(token, secret, {
+    algorithms: [JWT_ALGORITHM] as jwt.Algorithm[],
+  }) as jwt.JwtPayload & Partial<AuthTokenPayload>;
 
-	if (payload.tokenType !== type) {
-		throw new jwt.JsonWebTokenError("Invalid token type");
-	}
+  if (payload.tokenType !== type) {
+    throw new jwt.JsonWebTokenError("Invalid token type");
+  }
 
-	if (typeof payload.sub !== "string" || payload.sub.length === 0) {
-		throw new jwt.JsonWebTokenError("Token subject is missing");
-	}
+  if (typeof payload.sub !== "string" || payload.sub.length === 0) {
+    throw new jwt.JsonWebTokenError("Token subject is missing");
+  }
 
-	return {
-		...payload,
-		sub: payload.sub,
-		tokenType: type,
-	} as AuthTokenPayload;
+  return {
+    ...payload,
+    sub: payload.sub,
+    tokenType: type,
+  } as AuthTokenPayload;
 }
 
 export function extractBearerToken(authorizationHeader?: string | null) {
-	if (!authorizationHeader) {
-		return null;
-	}
+  if (!authorizationHeader) {
+    return null;
+  }
 
-	const [scheme, token] = authorizationHeader.split(" ");
-	if (scheme?.toLowerCase() !== "bearer" || !token) {
-		return null;
-	}
+  const [scheme, token] = authorizationHeader.split(" ");
+  if (scheme?.toLowerCase() !== "bearer" || !token) {
+    return null;
+  }
 
-	return token;
+  return token;
 }
 
 export function extractCookieToken(
-	cookies: Record<string, unknown>,
-	name: string,
+  cookies: Record<string, unknown>,
+  name: string,
 ) {
-	const value = cookies[name];
-	return typeof value === "string" && value.length > 0 ? value : null;
+  const value = cookies[name];
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
