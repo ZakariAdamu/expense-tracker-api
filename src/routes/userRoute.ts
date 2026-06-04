@@ -1,18 +1,22 @@
 import express from "express";
 import {
-	signupUser,
-	loginUser,
-	logoutUser,
-	getCurrentUser,
-	updateProfile,
-	changePassword,
-	refreshAuthTokens,
+  signupUser,
+  loginUser,
+  logoutUser,
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+  refreshAuthTokens,
+  verifyEmail,
+  resendVerificationCode,
 } from "../controllers/userController.ts";
 import { protect } from "../middleware/auth.ts";
 
 const userRouter = express.Router();
 
 userRouter.post("/signup", signupUser);
+userRouter.post("/verify-email", verifyEmail);
+userRouter.post("/resend-verification-code", resendVerificationCode);
 userRouter.post("/login", loginUser);
 userRouter.post("/refresh", refreshAuthTokens);
 userRouter.post("/logout", logoutUser);

@@ -4,7 +4,7 @@ import { env } from "../config/env.js";
 
 export type AuthTokenPayload = JwtPayload & {
   sub: string;
-  tokenType: "access" | "refresh";
+  tokenType: "access" | "refresh" | "verification";
 };
 
 // Cookie names for authentication tokens
@@ -41,6 +41,11 @@ export function createRefreshToken(userId: string) {
     env.jwtRefreshExpiresIn,
     "refresh",
   );
+}
+
+// Creates a short-lived verification token (1 hour)
+export function createVerificationToken(userId: string) {
+  return signToken(userId, env.jwtSecret, "1h", "verification");
 }
 
 export function getAuthCookieOptions(maxAgeMs: number) {
@@ -91,7 +96,7 @@ export function verifyToken(
   token: string,
   type: AuthTokenPayload["tokenType"],
 ) {
-  const secret = type === "access" ? env.jwtSecret : env.jwtRefreshSecret;
+  const secret = type === "refresh" ? env.jwtRefreshSecret : env.jwtSecret;
   const payload = jwt.verify(token, secret, {
     algorithms: [JWT_ALGORITHM] as jwt.Algorithm[],
   }) as jwt.JwtPayload & Partial<AuthTokenPayload>;
