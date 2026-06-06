@@ -72,8 +72,11 @@ function authCookieResponse(userId: string) {
 }
 
 // Helper to generate a 4-digit code
-const generateVerificationCode = () =>
-  Math.floor(1000 + Math.random() * 9000).toString();
+const generateVerificationCode = () => {
+  const array = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(array);
+  return (1000 + (array[0] % 9000)).toString();
+};
 
 // Reusable helper to send verification email
 async function sendVerificationEmail(email: string, code: string) {
@@ -212,11 +215,16 @@ export async function signupUser(req: Request, res: Response) {
       email: validated.email,
       password: hashedPassword,
       verificationCode: code,
-      verificationCodeExpires: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes
+      verificationCodeExpires: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes
     });
 
     await user.save();
-    await sendVerificationEmail(user.email, code);
+    try {
+      await sendVerificationEmail(user.email, code);
+    } catch (emailError) {
+      await User.deleteOne({ _id: user._id });
+      throw emailError;
+    }
 
     return sendSuccess(res, 201, "User signed up. Please verify your email.", {
       user: {
@@ -313,7 +321,7 @@ export async function resendVerificationCode(req: Request, res: Response) {
 
     const code = generateVerificationCode();
     user.verificationCode = code;
-    user.verificationCodeExpires = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
+    user.verificationCodeExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
     await user.save();
 
     await sendVerificationEmail(user.email, code);
