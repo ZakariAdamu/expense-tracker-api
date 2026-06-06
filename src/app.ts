@@ -86,8 +86,11 @@ export function createApp() {
     },
   });
 
+  // Apply rate limiters to auth-related routes
   app.use("/api/users/login", authLimiter);
   app.use("/api/users/signup", authLimiter);
+  // app.use("/api/users/verify-email", authLimiter);
+  // app.use("/api/users/resend-verification-code", authLimiter);
   app.use("/api/users/refresh", refreshLimiter);
 
   // ====================== BASIC ROUTE ======================

@@ -90,34 +90,6 @@ function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-function getMonthRange(month: unknown, year: unknown) {
-  const monthNumber = Number(month);
-  const yearNumber = Number(year);
-
-  if (
-    !Number.isInteger(monthNumber) ||
-    monthNumber < 1 ||
-    monthNumber > 12 ||
-    !Number.isInteger(yearNumber) ||
-    yearNumber < 1900
-  ) {
-    return null;
-  }
-
-  return {
-    startDate: new Date(yearNumber, monthNumber - 1, 1),
-    endDate: new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999),
-  };
-}
-
-function getUserObjectId(userId: string) {
-  if (!mongoose.isValidObjectId(userId)) {
-    return null;
-  }
-
-  return new mongoose.Types.ObjectId(userId);
-}
-
 // add income
 export const addIncome = async (req: Request, res: Response) => {
   if (!req.userId) {
@@ -386,50 +358,6 @@ export const exportIncomesToCSV = async (req: Request, res: Response) => {
       error instanceof Error
         ? error.message
         : "Unable to export incomes to CSV",
-    );
-  }
-};
-
-// get total income for a specific month and year
-export const getTotalIncomeByMonth = async (req: Request, res: Response) => {
-  if (!req.userId) {
-    return sendError(res, 401, "Unauthorized");
-  }
-
-  try {
-    const range = getMonthRange(req.query.month, req.query.year);
-    if (!range) {
-      return sendError(res, 400, "month and year must be valid numbers");
-    }
-
-    const userObjectId = getUserObjectId(req.userId);
-    if (!userObjectId) {
-      return sendError(res, 400, "Invalid user id");
-    }
-
-    const totalIncome = await incomeModel.aggregate([
-      {
-        $match: {
-          userId: userObjectId,
-          date: { $gte: range.startDate, $lte: range.endDate },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
-
-    return sendSuccess(res, 200, "Monthly total retrieved successfully", {
-      totalIncome: totalIncome[0]?.total ?? 0,
-    });
-  } catch (error: unknown) {
-    return sendError(
-      res,
-      400,
-      error instanceof Error ? error.message : "Unable to get total income",
     );
   }
 };
