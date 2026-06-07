@@ -44,8 +44,8 @@ async function startServer() {
 
   const app = createApp();
 
-  const port = app.get("env.port");
-  const host = app.get("env.host");
+  const port = app.get("port");
+  const host = app.get("host");
 
   const server = app.listen(port, host, () => {
     const displayUrl =

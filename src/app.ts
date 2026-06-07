@@ -29,6 +29,8 @@ export function createApp() {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
+  app.set("port", env.port);
+  app.set("host", env.host);
 
   // ====================== MIDDLEWARE ======================
 
@@ -99,8 +101,8 @@ export function createApp() {
       service: "finance-pro-backend",
       version: process.env.npm_package_version || "1.0.0",
       status: "running",
-      port: app.get("env.port"),
-      host: app.get("env. host"),
+      port: app.get("port"),
+      host: app.get("host"),
     });
   });
 
