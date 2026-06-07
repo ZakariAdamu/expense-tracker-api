@@ -13,6 +13,7 @@ import {
 import { sendError, sendSuccess } from "../lib/response.js";
 import User from "../models/userModel.ts";
 import { transporter } from "../services/email.service.ts";
+import axios from "axios";
 
 // ====================== SCHEMAS ======================
 export const signupSchema = z
@@ -83,7 +84,7 @@ async function sendVerificationEmail(email: string, code: string) {
   console.log(
     `Starting sending verification email to ${email} with code ${code}`,
   );
-  await transporter.sendMail({
+  await axios.post("https://api.brevo.com/v3/smtp/email", {
     from: process.env.FROM_EMAIL,
     to: email,
     subject: "Expense Tracker App - Verify Your Email",
