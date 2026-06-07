@@ -14,6 +14,7 @@ import { sendError, sendSuccess } from "../lib/response.js";
 import User from "../models/userModel.ts";
 import { transporter } from "../services/email.service.ts";
 import axios from "axios";
+import { env } from "../config/env.ts";
 
 // ====================== SCHEMAS ======================
 export const signupSchema = z
@@ -89,7 +90,7 @@ async function sendVerificationEmail(email: string, code: string) {
     {
       sender: {
         name: "Expense Tracker",
-        email: process.env.FROM_EMAIL,
+        email: env.fromEmail,
       },
       to: [{ email }],
       subject: "Welcome to Expense Tracker App - Verify Your Email",
@@ -206,7 +207,7 @@ async function sendVerificationEmail(email: string, code: string) {
     },
     {
       headers: {
-        "api-key": process.env.BREVO_API_KEY,
+        "api-key": env.brevoApiKey,
         "content-type": "application/json",
       },
     },

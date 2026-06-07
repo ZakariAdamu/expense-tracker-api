@@ -15,6 +15,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1).optional(),
   JWT_ACCESS_EXPIRES_IN: z.string().default("60m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+  FROM_EMAIL: z.string().email("Invalid sender email").optional(),
   MONGO_RETRIES: z.coerce.number().int().min(0).default(3),
   MONGO_RETRY_DELAY_MS: z.coerce.number().int().min(0).default(2000),
   FRONTEND_DEV_URL: z.string().url().optional(),
@@ -55,6 +56,7 @@ export const env = {
     envValues.HOST ??
     (envValues.NODE_ENV === "production" ? "0.0.0.0" : "localhost"),
   brevoApiKey: envValues.BREVO_API_KEY,
+  fromEmail: envValues.FROM_EMAIL,
   mongoDbUri: envValues.MONGODBURI ?? envValues.MOGODBURI ?? "",
   jwtSecret: envValues.JWT_SECRET,
   jwtRefreshSecret: envValues.JWT_REFRESH_SECRET ?? envValues.JWT_SECRET,
