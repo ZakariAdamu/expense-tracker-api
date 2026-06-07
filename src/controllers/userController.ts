@@ -87,9 +87,12 @@ async function sendVerificationEmail(email: string, code: string) {
   await axios.post(
     "https://api.brevo.com/v3/smtp/email",
     {
-      from: process.env.FROM_EMAIL,
-      to: email,
-      subject: "Expense Tracker App - Verify Your Email",
+      sender: {
+        name: "Expense Tracker",
+        email: process.env.FROM_EMAIL,
+      },
+      to: [{ email }],
+      subject: "Welcome to Expense Tracker App - Verify Your Email",
       htmlContent: `
   <div style="
     background-color: #f4f7f6;

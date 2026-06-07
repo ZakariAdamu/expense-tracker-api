@@ -30,6 +30,9 @@ export function createApp() {
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
 
+  app.set("port", env.port);
+  app.set("host", env.host);
+
   // ====================== MIDDLEWARE ======================
 
   // 1. Security headers (Very Important)
@@ -99,6 +102,8 @@ export function createApp() {
       service: "finance-pro-backend",
       version: process.env.npm_package_version || "1.0.0",
       status: "running",
+      port: app.get("port"),
+      host: app.get("host"),
     });
   });
 
