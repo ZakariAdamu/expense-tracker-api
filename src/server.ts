@@ -44,12 +44,12 @@ async function startServer() {
 
   const app = createApp();
 
-  const host = env.nodeEnv === "production" ? "0.0.0.0" : "localhost";
-  const server = app.listen(env.port, host, () => {
+  const port = app.get("env.port");
+  const host = app.get("env.host");
+
+  const server = app.listen(port, host, () => {
     const displayUrl =
-      env.nodeEnv === "production"
-        ? `port ${env.port}`
-        : `http://${host}:${env.port}`;
+      env.nodeEnv === "production" ? `port ${port}` : `http://${host}:${port}`;
     console.log(
       `🟢 finance-pro-backend listening on ${displayUrl} 🚀🚀 Happy coding! 🚀🚀`,
     );

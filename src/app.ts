@@ -99,6 +99,8 @@ export function createApp() {
       service: "finance-pro-backend",
       version: process.env.npm_package_version || "1.0.0",
       status: "running",
+      port: app.get("env.port"),
+      host: app.get("env. host"),
     });
   });
 
