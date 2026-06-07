@@ -84,11 +84,13 @@ async function sendVerificationEmail(email: string, code: string) {
   console.log(
     `Starting sending verification email to ${email} with code ${code}`,
   );
-  await axios.post("https://api.brevo.com/v3/smtp/email", {
-    from: process.env.FROM_EMAIL,
-    to: email,
-    subject: "Expense Tracker App - Verify Your Email",
-    html: `
+  await axios.post(
+    "https://api.brevo.com/v3/smtp/email",
+    {
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: "Expense Tracker App - Verify Your Email",
+      htmlContent: `
   <div style="
     background-color: #f4f7f6;
     padding: 40px 20px;
@@ -198,7 +200,14 @@ async function sendVerificationEmail(email: string, code: string) {
     </div>
   </div>
 `,
-  });
+    },
+    {
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+    },
+  );
   console.log(`Verification email sent to ${email}`);
 }
 
