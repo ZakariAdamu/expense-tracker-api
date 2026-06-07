@@ -44,9 +44,14 @@ async function startServer() {
 
   const app = createApp();
 
-  const server = app.listen(env.port, () => {
+  const host = env.nodeEnv === "production" ? "0.0.0.0" : "localhost";
+  const server = app.listen(env.port, host, () => {
+    const displayUrl =
+      env.nodeEnv === "production"
+        ? `port ${env.port}`
+        : `http://${host}:${env.port}`;
     console.log(
-      `🟢 finance-pro-backend listening on http://localhost:${env.port} 🚀🚀 Happy coding! 🚀🚀`,
+      `🟢 finance-pro-backend listening on ${displayUrl} 🚀🚀 Happy coding! 🚀🚀`,
     );
   });
 

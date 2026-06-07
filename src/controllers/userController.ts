@@ -80,6 +80,9 @@ const generateVerificationCode = () => {
 
 // Reusable helper to send verification email
 async function sendVerificationEmail(email: string, code: string) {
+  console.log(
+    `Starting sending verification email to ${email} with code ${code}`,
+  );
   await transporter.sendMail({
     from: process.env.FROM_EMAIL,
     to: email,
@@ -195,19 +198,35 @@ async function sendVerificationEmail(email: string, code: string) {
   </div>
 `,
   });
+  console.log(`Verification email sent to ${email}`);
 }
 
 // ====================== SIGNUP ======================
 export async function signupUser(req: Request, res: Response) {
+  // Verify transporter is ready before processing signup requests to catch any SMTP issues early
+  transporter.verify((err) => {
+    if (err) {
+      console.error("SMTP verify failed:", err);
+    } else {
+      console.log("SMTP ready");
+    }
+  });
+
   try {
     const validated = signupSchema.parse(req.body);
+    console.log("A - Signup request received for email:", validated.email);
     const existingUser = await User.findOne({ email: validated.email });
+    console.log(
+      "B - Existing user check completed:",
+      existingUser ? "User found" : "No user found",
+    );
 
     if (existingUser) {
       return sendError(res, 409, "Email already in use");
     }
 
     const hashedPassword = await bcrypt.hash(validated.password, 12);
+    console.log("C - Password hashed successfully");
 
     const code = generateVerificationCode();
     const user = new User({
@@ -219,10 +238,14 @@ export async function signupUser(req: Request, res: Response) {
     });
 
     await user.save();
+    console.log("D - User saved to database");
+
     try {
       await sendVerificationEmail(user.email, code);
+      console.log("E - Verification email sent successfully");
     } catch (emailError) {
       await User.deleteOne({ _id: user._id });
+      console.error("F - Error sending verification email:", emailError);
       throw emailError;
     }
 
