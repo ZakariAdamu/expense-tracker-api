@@ -48,24 +48,27 @@ export function createVerificationToken(userId: string) {
   return signToken(userId, env.jwtSecret, "1h", "verification");
 }
 
-export function getAuthCookieOptions(maxAgeMs: number) {
+export function getAuthCookieOptions(maxAgeMs?: number): CookieOptions {
+  const isProd = env.nodeEnv === "production";
+
   return {
     httpOnly: true,
-    secure: env.nodeEnv === "production",
-    sameSite: "lax" as const,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
-    maxAge: maxAgeMs,
+    ...(typeof maxAgeMs === "number" ? { maxAge: maxAgeMs } : {}),
     ...(env.cookieDomain ? { domain: env.cookieDomain } : {}),
   };
 }
 
-export function getAccessTokenCookieOptions() {
+export function getAccessTokenCookieOptions(): CookieOptions {
   return getAuthCookieOptions(60 * 60 * 1000); // 1 hour
 }
 
-export function getRefreshTokenCookieOptions() {
+export function getRefreshTokenCookieOptions(): CookieOptions {
   return getAuthCookieOptions(7 * 24 * 60 * 60 * 1000); // 7 days
 }
+
 // Sets the access and refresh tokens as HTTP-only cookies in the response
 export function setAuthCookies(
   res: {
@@ -86,7 +89,8 @@ export function setAuthCookies(
 export function clearAuthCookies(res: {
   clearCookie: (name: string, options?: CookieOptions) => unknown;
 }) {
-  const options = getRefreshTokenCookieOptions();
+  // Pass options WITHOUT maxAge so Express clears cross-site cookies cleanly
+  const options = getAuthCookieOptions();
   res.clearCookie(ACCESS_TOKEN_COOKIE, options);
   res.clearCookie(REFRESH_TOKEN_COOKIE, options);
   res.clearCookie(LEGACY_TOKEN_COOKIE, options);
