@@ -1,45 +1,66 @@
-import cors from "cors";
-import cookieParser from "cookie-parser";
+import fs from "node:fs";
+import path from "node:path";
 import compression from "compression";
-import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express, {
   type NextFunction,
   type Request,
   type Response,
 } from "express";
+import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import jwt from "jsonwebtoken";
+import swaggerUi from "swagger-ui-express";
 import { ZodError } from "zod";
 import { env } from "./config/env.js";
 import { isHttpError } from "./lib/http-error.js";
 import { sendError, sendSuccess } from "./lib/response.js";
-import swaggerUi from "swagger-ui-express";
-import fs from "fs";
-import path from "path";
 
-// Import your routes
-import { healthRouter } from "./routes/health.ts";
-import { summaryRouter } from "./routes/summary.ts";
-import incomeRouter from "./routes/incomeRoute.ts";
-import expenseRouter from "./routes/expenseRoute.ts";
-import dashboardRouter from "./routes/dashboardRoute.ts";
-import userRouter from "./routes/userRoute.ts";
+// Routes
+import dashboardRouter from "./routes/dashboardRoute.js";
+import expenseRouter from "./routes/expenseRoute.js";
+import { healthRouter } from "./routes/health.js";
+import incomeRouter from "./routes/incomeRoute.js";
+import { summaryRouter } from "./routes/summary.js";
+import userRouter from "./routes/userRoute.js";
+
+// Load OpenAPI spec once at module startup instead of inside createApp()
+let swaggerSpec: Record<string, unknown> | null = null;
+try {
+  const openapiPath = path.resolve(process.cwd(), "openapi", "openapi.json");
+  if (fs.existsSync(openapiPath)) {
+    swaggerSpec = JSON.parse(fs.readFileSync(openapiPath, "utf-8"));
+  }
+} catch (err) {
+  console.warn("Could not load OpenAPI spec:", err);
+}
 
 export function createApp() {
   const app = express();
+
+  // 1. ======== Core App Settings (Must come first) ========
   app.disable("x-powered-by");
-  app.set("trust proxy", 1);
+  app.set("trust proxy", 1); // Crucial for Render HTTPS cookies & accurate rate-limit IPs
   app.set("port", env.port);
   app.set("host", env.host);
 
-  // ====================== MIDDLEWARE ======================
+  // 2. ======== Security Headers ========
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
 
-  // 1. Security headers (Very Important)
-  app.use(helmet());
+  // 3. ======== CORS & Preflight (Must come before rate limiters & routes) ========
+  // Normalize origins by stripping any accidental trailing slashes
+  const normalizedOrigins = env.allowedOrigins.map((origin) =>
+    origin.replace(/\/+$/, ""),
+  );
 
   const corsOrigin =
-    env.allowedOrigins.length > 0
-      ? env.allowedOrigins
+    normalizedOrigins.length > 0
+      ? normalizedOrigins
       : env.nodeEnv === "production"
         ? false
         : true;
@@ -52,23 +73,18 @@ export function createApp() {
   };
 
   app.use(cors(corsOptions));
-
-  // 2. Add the global preflight interceptor (CRITICAL for Render + Next.js)
   app.options("*", cors(corsOptions));
 
-  // 3. Compression (speeds up responses)
+  // 4. ======== Compression & Parsers ========
   app.use(compression());
-
-  // 4. Body parsing
-  app.use(express.json({ limit: "10mb" })); // Prevent huge payloads
+  app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-  // 5. Cookie parser
   app.use(cookieParser());
 
+  // 5. ======== Rate Limiters ========
   const authLimiter = rateLimit({
     windowMs: 45 * 60 * 1000, // 45 minutes
-    max: 15, // Limit each IP to 15 requests per windowMs
+    max: 15,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -88,14 +104,11 @@ export function createApp() {
     },
   });
 
-  // Apply rate limiters to auth-related routes
   app.use("/api/users/login", authLimiter);
   app.use("/api/users/signup", authLimiter);
-  // app.use("/api/users/verify-email", authLimiter);
-  // app.use("/api/users/resend-verification-code", authLimiter);
   app.use("/api/users/refresh", refreshLimiter);
 
-  // ====================== BASIC ROUTE ======================
+  // 6. ======== Health & Root Routes ========
   app.get("/", (_req: Request, res: Response) => {
     sendSuccess(res, 200, "Backend is healthy", {
       service: "finance-pro-backend",
@@ -106,38 +119,32 @@ export function createApp() {
     });
   });
 
-  // ====================== ROUTES ======================
   app.use("/api/health", healthRouter);
+
+  // 7. ======== Application API Routes ========
   app.use("/api/users", userRouter);
   app.use("/api/summary", summaryRouter);
   app.use("/api/income", incomeRouter);
   app.use("/api/expenses", expenseRouter);
   app.use("/api/dashboard", dashboardRouter);
 
-  // Optional: Keep /dashboard if you serve some HTML/views
-  app.use("/dashboard", dashboardRouter);
-
-  // ====================== API Docs (Swagger UI) ======================
-  try {
-    const openapiPath = path.resolve(process.cwd(), "openapi", "openapi.json");
-    if (fs.existsSync(openapiPath)) {
-      const spec = JSON.parse(fs.readFileSync(openapiPath, "utf-8"));
-      app.use(
-        "/docs",
-        swaggerUi.serve,
-        swaggerUi.setup(spec, { explorer: true }),
-      );
-    }
-  } catch (err) {
-    console.warn("Could not mount API docs:", err);
+  // 8. ======== API Docs (Swagger UI) ========
+  if (swaggerSpec) {
+    // Relax CSP strictly on /docs so Swagger UI scripts/styles aren't blocked by Helmet
+    app.use(
+      "/docs",
+      helmet({ contentSecurityPolicy: false }),
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, { explorer: true }),
+    );
   }
 
-  // ====================== 404 HANDLER ======================
+  // 9. ======== 404 Handler ========
   app.use((_req: Request, res: Response) => {
     sendError(res, 404, "Route not found");
   });
 
-  // ====================== GLOBAL ERROR HANDLER ======================
+  // 10. ======== Global Error Handler (Must come last) ========
   app.use(
     (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
       if (res.headersSent) {
